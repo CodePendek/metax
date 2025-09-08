@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Microstock Metadata Pro</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            /* Menyesuaikan tinggi body untuk mobile tanpa scroll */
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(135deg, #1f2937, #374151);
+        }
+        /* Menyesuaikan tinggi preview area agar pas di layar kecil */
+        #metadataPreview {
+            resize: none;
+            height: 120px;
+        }
+    </style>
+</head>
+<body class="p-4 text-center text-gray-100">
+
+    <div class="bg-gray-800 p-6 rounded-xl shadow-lg w-full max-w-sm overflow-hidden">
+        <h2 class="text-2xl font-bold mb-4">AI Metadata Generator 📸</h2>
+
+        <div class="mb-4">
+            <input type="file" id="imageInput" accept="image/*" multiple
+                   class="w-full text-sm text-gray-300
+                          file:mr-4 file:py-2 file:px-4
+                          file:rounded-full file:border-0
+                          file:text-sm file:font-semibold
+                          file:bg-violet-50 file:text-violet-700
+                          hover:file:bg-violet-100 cursor-pointer"/>
+            
+            <div class="flex items-center justify-center mt-3">
+                <input id="epsCheckbox" type="checkbox"
+                       class="w-4 h-4 text-blue-600 bg-gray-700 border-gray-600 rounded focus:ring-blue-500"/>
+                <label for="epsCheckbox" class="ml-2 text-sm font-medium text-gray-300">
+                    Ubah Ekstensi ke .EPS
+                </label>
+            </div>
+        </div>
+
+        <button onclick="generateAllMetadata()"
+                class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-full transition-colors duration-200 mb-2">
+            Generate Metadata
+        </button>
+
+        <p id="status" class="text-sm font-semibold text-gray-400 min-h-[1.5rem] mt-2"></p>
+        <div id="thumbnailContainer" class="flex flex-wrap justify-center gap-2 my-3 max-h-24 overflow-y-auto p-1 bg-gray-700 rounded">
+            </div>
+
+        <h3 class="text-md font-semibold mt-4 mb-2 text-left">Preview Metadata</h3>
+        <textarea id="metadataPreview" readonly
+                  class="w-full p-2 text-sm rounded bg-gray-700 text-gray-200 border border-gray-600 focus:outline-none focus:border-blue-500"
+                  placeholder="Metadata hasil akan muncul di sini..."></textarea>
+
+        <button id="downloadBtn" onclick="downloadAllCSV()"
+                class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-full transition-colors duration-200 mt-4 hidden">
+            Download All CSV
+        </button>
+    </div>
+
+    <script>
+        const API_KEY = "AIzaSyBDm1ejoXcPjqdC_Fi5MR_xKynrGbvnGQU";
+        const ENDPOINT = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent";
+
+        let shutterstockCSV = "filename,description,keywords\n";
+        let adobestockCSV = "filename,title,description,keywords,Model Release ID,Property Release ID\n"; // Menambahkan kolom Release ID
+        let vecteezyCSV = "filename,title,keywords\n";
+        let previewText = ""; // String untuk pratinjau
+
+        function getFilename(file, isEPS) {
+            const name = file.name;
+            const lastDot = name.lastIndexOf('.');
+            const baseName = lastDot !== -1 ? name.substring(0, lastDot) : name;
+            return isEPS ? `${baseName}.eps` : name;
+        }
+
+        async function generateAllMetadata() {
+            const input = document.getElementById("imageInput");
+            const files = input.files;
+            const status = document.getElementById("status");
+            const downloadBtn = document.getElementById("downloadBtn");
+            const previewArea = document.getElementById("metadataPreview");
+            const thumbnailContainer = document.getElementById("thumbnailContainer");
+            const isEPS = document.getElementById("epsCheckbox").checked;
+
+            downloadBtn.classList.add("hidden");
+            previewArea.value = "";
+            thumbnailContainer.innerHTML = ""; // Bersihkan thumbnail
+
+            if (!files.length) {
+                status.textContent = "Pilih gambar terlebih dahulu.";
+                return;
+            }
+
+            // Reset CSVs
+            shutterstockCSV = "filename,description,keywords\n";
+            adobestockCSV = "filename,title,description,keywords,Model Release ID,Property Release ID\n";
+            vecteezyCSV = "filename,title,keywords\n";
+            previewText = "";
+
+            for (let file of files) {
+                // Tampilkan Thumbnail
+                createThumbnail(file, thumbnailContainer);
+
+                status.textContent = `${file.name}: sedang diproses...`;
+
+                try {
+                    const metadata = await kirimKeGemini(file);
+                    status.textContent = `${file.name}: berhasil ✅`;
+
+                    const filename = getFilename(file, isEPS);
+                    const title = metadata.title.replace(/"/g, '""');
+                    const description = metadata.description.replace(/"/g, '""');
+                    const keywords = metadata.keywords.replace(/"/g, '""');
+
+                    // Bangun string CSV
+                    shutterstockCSV += `"${filename}","${description}","${keywords}"\n`;
+                    adobestockCSV += `"${filename}","${title}","${description}","${keywords}",,\n`; // Biarkan Release ID kosong
+                    vecteezyCSV += `"${filename}","${title}","${keywords}"\n`;
+
+                    // Bangun string pratinjau
+                    previewText += `--- ${filename} ---\nTitle: ${metadata.title}\nDesc: ${metadata.description}\nKeywords: ${metadata.keywords}\n\n`;
+
+                    await new Promise(r => setTimeout(r, 700)); // Sedikit delay
+                } catch (err) {
+                    console.error("Gagal memproses file:", file.name, err);
+                    status.textContent = `${file.name}: gagal ❌`;
+                    await new Promise(r => setTimeout(r, 700));
+                }
+            }
+
+            status.textContent = "Semua selesai. Siap diunduh.";
+            previewArea.value = previewText.trim();
+            downloadBtn.classList.remove("hidden");
+        }
+
+        async function kirimKeGemini(file) {
+            // Logika kirimKeGemini tetap sama (tidak diubah dari versi sebelumnya)
+            const reader = new FileReader();
+            const base64 = await new Promise((resolve, reject) => {
+                reader.onload = () => resolve(reader.result.split(",")[1]);
+                reader.onerror = (error) => reject(error);
+                reader.readAsDataURL(file);
+            });
+
+            const prompt = `Buat metadata microstock untuk gambar ini. Formatkan sebagai:
+- Title (maksimal 70 karakter)
+- Description (maksimal 250 karakter)
+- Keywords (15-20 kata kunci, dipisahkan koma)`;
+
+            const payload = {
+                contents: [{
+                    parts: [
+                        { text: prompt },
+                        { inline_data: { mime_type: file.type, data: base64 } }
+                    ]
+                }]
+            };
+
+            const response = await fetch(`${ENDPOINT}?key=${API_KEY}`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload)
+            });
+
+            const result = await response.json();
+            const outputText = result?.candidates?.[0]?.content?.parts?.[0]?.text || "";
+
+            const title = (outputText.match(/Title\s*[:\-]\s*(.+)/i) || [])[1]?.trim() || "No Title Found";
+            const description = (outputText.match(/Description\s*[:\-]\s*(.+)/i) || [])[1]?.trim() || "No Description Found";
+            const keywords = (outputText.match(/Keywords\s*[:\-]\s*(.+)/i) || [])[1]?.trim() || "keyword1, keyword2, keyword3";
+
+            return { title, description, keywords };
+        }
+
+        function createThumbnail(file, container) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const img = document.createElement("img");
+                img.src = e.target.result;
+                img.alt = file.name;
+                // Style untuk thumbnail 100x100
+                img.className = "w-10 h-10 object-cover rounded-md border border-gray-500 shadow-md";
+                container.appendChild(img);
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function downloadCSV(csvContent, platform) {
+            const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+            const link = document.createElement("a");
+            link.href = URL.createObjectURL(blob);
+            link.download = `${platform}.csv`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        function downloadAllCSV() {
+            downloadCSV(shutterstockCSV, 'shutterstock');
+            downloadCSV(adobestockCSV, 'adobestock');
+            downloadCSV(vecteezyCSV, 'vecteezy');
+        }
+    </script>
+</body>
+</html>
