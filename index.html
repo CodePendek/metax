@@ -425,6 +425,23 @@
                 height: 100px;
             }
         }
+        
+        .ai-ready { background: var(--success); }
+        .ai-bandwidth { background: var(--warning); }
+        .ai-inactive { background: var(--danger); }
+
+        #image-previews {
+            display: flex;
+            overflow-x: auto;
+            gap: 12px;
+            padding-bottom: 8px;
+            scroll-snap-type: x mandatory;
+        }
+        
+        .preview-item {
+            flex: 0 0 auto;
+            scroll-snap-align: start;
+        }
     </style>
 </head>
 <body>
@@ -450,6 +467,11 @@
                     <span id="uploaded-count">0</span> dari <span id="max-files">20</span> file terunggah
                 </div>
             </div>
+        </div>
+        
+        <div style="display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 12px;">
+            <span id="aiStatusDot" class="status-indicator" style="position: static; border: 2px solid white; box-shadow: none;"></span>
+            <span id="aiStatusText" style="font-size: 14px; color: #555;">Checking AI status...</span>
         </div>
 
         <button id="generate-btn">Generate Metadata</button>
@@ -531,6 +553,8 @@
         const fileCounter = document.querySelector('.file-counter');
         const uploadedCount = document.getElementById('uploaded-count');
         const maxFiles = document.getElementById('max-files');
+        const aiStatusDot = document.getElementById('aiStatusDot');
+        const aiStatusText = document.getElementById('aiStatusText');
 
         // Variabel state
         let uploadedImages = [];
@@ -540,7 +564,7 @@
         const IMAGESPERPAGE = 12;
 
         // API Configuration
-        const APIKEY = "AIzaSyCA4XexITsvMgAQI2rlgEEmrrR907K5aw";
+        const APIKEY = "AIzaSyBnpi-ZnhpoXT_wUAMGjuCghrLob6C2p50";
         const GEMINI_ENDPOINT = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${APIKEY}`;
 
         // Tampilkan notifikasi
@@ -625,31 +649,27 @@
             const files = event.target.files;
             if (!files.length) return;
             
-            // Batasi maksimal 20 gambar
             const limitedFiles = Array.from(files).slice(0, MAX_FILES);
             
             uploadedImages = [];
             currentIndex = 0;
             
-            // Reset metadata
             metadataAll.value = '';
             metadataShutterstock.value = '';
             metadataAdobestock.value = '';
             metadataVecteezy.value = '';
             currentMetadata = [];
             
-            // Proses setiap file
             limitedFiles.forEach((file, index) => {
                 const reader = new FileReader();
                 
                 reader.onload = function(e) {
-                    // Simpan nama asli file dan data gambar - TANPA MENGUBAH NAMA FILE
                     uploadedImages.push({
-                        originalName: file.name, // Simpan nama asli persis seperti yang diupload
+                        originalName: file.name,
                         base64: e.target.result.split(',')[1],
                         preview: e.target.result,
                         type: file.type,
-                        file: file  // Simpan objek file asli
+                        file: file
                     });
                     
                     if (uploadedImages.length === limitedFiles.length) {
@@ -689,11 +709,9 @@
             tab.addEventListener('click', function() {
                 const tabId = this.getAttribute('data-tab');
                 
-                // Update active tab
                 tabs.forEach(t => t.classList.remove('active'));
                 this.classList.add('active');
                 
-                // Show active content
                 tabContents.forEach(content => content.classList.remove('active'));
                 document.getElementById(`${tabId}-content`).classList.add('active');
             });
@@ -719,7 +737,6 @@
             `;
 
             try {
-                // Format data sesuai dengan yang diharapkan oleh API Gemini
                 const requestBody = {
                     contents: [{
                         parts: [
@@ -762,17 +779,13 @@
                 return data.candidates[0].content.parts[0].text.trim();
             } catch (error) {
                 console.error('Error processing image:', error);
-                // Fallback response untuk testing
                 return `${image.originalName},"Beautiful landscape scene","A stunning landscape with mountains and lake under clear blue sky, perfect for nature themes and travel websites","landscape, nature, mountains, lake, sky, outdoor, scenic, beautiful, peaceful, travel, tourism, vacation, environment, wilderness, natural, countryside, hills, water, reflection, cloud, serene, majestic, panoramic, view, summer"`;
             }
         }
 
         // Fungsi untuk mengurai metadata dari output AI
         function parseMetadata(metadataText, originalFilename) {
-            // Bersihkan teks dari karakter yang tidak diinginkan
             const cleanText = metadataText.replace(/```csv|```/g, '').trim();
-            
-            // Cari baris yang sesuai dengan filename
             const lines = cleanText.split('\n');
             let dataLine = '';
             
@@ -784,13 +797,11 @@
             }
             
             if (!dataLine && lines.length > 0) {
-                // Jika tidak ditemukan, gunakan baris pertama
                 dataLine = lines[0];
             }
             
             if (!dataLine) return null;
             
-            // Parse CSV sederhana (handle quoted fields)
             const regex = /(?:,|^)(?:"([^"]*)"|([^",]*))/g;
             let matches;
             const fields = [];
@@ -800,14 +811,12 @@
                 fields.push(value.trim());
             }
             
-            // Pastikan kita memiliki setidaknya 4 field
             while (fields.length < 4) {
                 fields.push('');
             }
             
-            // Tetap gunakan filename asli meskipun AI memberikan yang berbeda
             return {
-                filename: originalFilename, // Selalu gunakan filename asli
+                filename: originalFilename,
                 title: fields[1] || 'No title generated',
                 description: fields[2] || 'No description generated',
                 keywords: fields[3] || 'keywords'
@@ -860,24 +869,49 @@
         function updateAllMetadataTabs() {
             if (!currentMetadata.length) return;
             
-            // Update All Metadata tab
             let allContent = 'filename,title,description,keywords\n';
             currentMetadata.forEach(meta => {
                 allContent += `"${meta.filename}","${meta.title}","${meta.description}","${meta.keywords}"\n`;
             });
             metadataAll.value = allContent;
             
-            // Update Shutterstock tab
             metadataShutterstock.value = createShutterstockCSV(currentMetadata);
-            
-            // Update Adobe Stock tab
             metadataAdobestock.value = createAdobestockCSV(currentMetadata);
-            
-            // Update Vecteezy tab
             metadataVecteezy.value = createVecteezyCSV(currentMetadata);
         }
+        
+        async function checkAIStatus() {
+            try {
+                const res = await fetch(GEMINI_ENDPOINT, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ contents: [{ parts: [{ text: "ping" }] }] })
+                });
+                
+                if (res.ok) {
+                    aiStatusDot.className = 'status-indicator ai-ready';
+                    aiStatusText.textContent = 'AI Status: Ready';
+                    generateBtn.disabled = false;
+                } else if (res.status === 429) {
+                    aiStatusDot.className = 'status-indicator ai-bandwidth';
+                    aiStatusText.textContent = 'AI Status: Bandwidth Full';
+                    generateBtn.disabled = true;
+                } else {
+                    aiStatusDot.className = 'status-indicator ai-inactive';
+                    aiStatusText.textContent = 'AI Status: Inactive';
+                    generateBtn.disabled = true;
+                }
+            } catch (error) {
+                aiStatusDot.className = 'status-indicator ai-inactive';
+                aiStatusText.textContent = 'AI Status: Inactive';
+                generateBtn.disabled = true;
+                console.error('AI status check failed:', error);
+            }
+        }
 
-        // Event listener untuk tombol generate
+        checkAIStatus();
+
+        // Event listener untuk tombol 
         generateBtn.addEventListener('click', async function() {
             if (!uploadedImages.length) {
                 showNotification('Silakan unggah gambar terlebih dahulu.', true);
@@ -895,7 +929,6 @@
                     const image = uploadedImages[i];
                     metadataAll.value = `filename,title,description,keywords\n\nMemproses gambar ${i+1} dari ${uploadedImages.length}...`;
                     
-                    // Update status indicator
                     updateStatusIndicator(i, 'processing');
                     
                     try {
