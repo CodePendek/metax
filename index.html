@@ -720,21 +720,24 @@
         // Fungsi untuk mengirim gambar ke API AI
         async function processImage(image) {
             const promptText = `
-                Generate microstock metadata for this image in a CSV-like format.
-                The output should be a single line with four columns: filename,title,description,keywords.
-                All text must be in English.
-                
-                filename: ${image.originalName} (use the actual uploaded file name exactly as provided)
-                title: A concise, descriptive title, optimized for search. Max 50-70 characters.
-                description: A detailed description, including what is shown, emotions, context, and potential uses. Max 150-200 characters.
-                keywords: 20-30 highly relevant, comma-separated keywords, including synonyms and long-tail terms.
+    Generate microstock metadata for this image in a CSV-like format.
+    The output should be a single line with four columns: filename,title,description,keywords.
+    All text must be in English.
 
-                Example Format:
-                ${image.originalName},"A captivating title here","A detailed description of the image content, including colors, subjects, and mood. Suitable for various projects.","keyword1, keyword2, keyword3, keyword4, keyword5"
+    filename: ${image.originalName} (use the actual uploaded file name exactly as provided)
+    
+    title: A concise, descriptive title that includes the most important 5W1H elements (What, Who, When, Where, Why, How) relevant to the image. Max 50-70 characters.
+    
+    description: A detailed description of the image content, including subjects, colors, emotions, context, potential uses, and 5W1H elements. Max 150-200 characters.
+    
+    keywords: 20-30 highly relevant, comma-separated keywords, including synonyms and long-tail terms.
 
-                Do NOT include any other text or explanation. Only output the single line of metadata.
-                IMPORTANT: Use the exact filename as provided without any changes.
-            `;
+    Example Format:
+    ${image.originalName},"A captivating title here","A detailed description of the image content, including colors, subjects, and mood. Suitable for various projects.","keyword1, keyword2, keyword3, keyword4, keyword5"
+
+    Do NOT include any other text or explanation. Only output the single line of metadata.
+    IMPORTANT: Use the exact filename as provided without any changes.
+`;
 
             try {
                 const requestBody = {
@@ -851,7 +854,7 @@
         function createAdobestockCSV(metadataArray) {
             let csvContent = 'filename,title,keywords\n';
             metadataArray.forEach(meta => {
-                csvContent += `"${meta.filename}","${meta.title}","${meta.keywords}"\n`;
+                csvContent += `"${meta.filename}","${meta.description}","${meta.keywords}"\n`;
             });
             return csvContent;
         }
@@ -860,7 +863,7 @@
         function createVecteezyCSV(metadataArray) {
             let csvContent = 'filename,title,keywords\n';
             metadataArray.forEach(meta => {
-                csvContent += `"${meta.filename}","${meta.title}","${meta.keywords}"\n`;
+                csvContent += `"${meta.filename}","${meta.description}","${meta.keywords}"\n`;
             });
             return csvContent;
         }
