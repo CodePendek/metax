@@ -333,25 +333,34 @@ async function processImageWithLoadBalancing(image, retryCount = 0) {
     const isVector = vectorCheckbox.checked;
     const isVideo = videoCheckbox.checked;
     
-    const promptText = `
-Generate microstock metadata for this image in a CSV-like format.
-The output should be a single line with four columns: filename,title,description,keywords.
-All text must be in English.
+    const promptText = `Generate compelling microstock metadata that will attract buyers and increase sales potential. Use a CSV-like format with exactly four columns: filename,title,description,keywords. All text must be in commercial English.
 
-filename: ${getFilenameWithExtension(image.originalName, isVector, isVideo)} (use this exact filename)
+filename: [nama_file] (use this exact filename without modification)
 
-title: A concise, descriptive title that includes the most important 5W1H elements (What, Who, When, Where, Why, How) relevant to the image. Max 50-70 characters.
+title: Create a concise, engaging title (50-70 characters) that highlights the main subject, action, and context. Include commercial appeal and potential use cases. Focus on clarity and searchability.
 
-description: A detailed description of the image content, including subjects, colors, emotions, context, potential uses, and 5W1H elements. Max 150-200 characters.
+description: Write a detailed description (150-200 characters) that tells a story about the image. Include:
+- Main subjects and their actions
+- Color palette and composition
+- Mood and atmosphere
+- Potential commercial applications (e.g., website design, advertising, editorial content)
+- Technical details if relevant (e.g., isolated object, copy space)
+- Do NOT mention that it's a vector illustration if vector option is selected
+-DO NOT include any special characters, symbols, emojis, quotation marks, hyphens, or parentheses - use only standard letters (A-Z, a-z), numbers (0-9), commas, periods, and spaces.
 
-keywords: 20-30 highly relevant, comma-separated keywords, including synonyms and long-tail terms.
+keywords: Provide 25-35 highly relevant, buyer-focused keywords including:
+- Primary subjects and actions
+- Styles and concepts
+- Industries and use cases
+- Synonyms and alternative phrases
+- Long-tail keywords for better discoverability
+- EXCLUDE the word "vector" completely if vector option is selected
+- Format as comma-separated values without numbers or bullets
 
 Example Format:
-${getFilenameWithExtension(image.originalName, isVector, isVideo)},"A captivating title here","A detailed description of the image content, including colors, subjects, and mood. Suitable for various projects.","keyword1, keyword2, keyword3, keyword4, keyword5"
+[nama_file],"Professional business team collaborating in modern office","Diverse group of professionals working together at conference table in bright contemporary office space with natural lighting, suitable for business concepts, teamwork, and corporate communications","business, team, meeting, office, collaboration, professionals, diversity, conference, discussion, workplace, strategy, planning, success, partnership, leadership, corporate, communication, modern, interior, daylight"
 
-Do NOT include any other text or explanation. Only output the single line of metadata.
-IMPORTANT: Use the exact filename as provided without any changes.
-`;
+Do NOT include any additional text, explanations, or disclaimers. Output only the single line of metadata exactly as specified.`;
 
     try {
         const requestBody = {
