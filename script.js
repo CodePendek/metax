@@ -161,11 +161,11 @@ function updateAPIStatusDisplay() {
                           api.status === 'bandwidth' ? 'ai-bandwidth' : 'ai-inactive';
         
         statusItem.innerHTML = `
-            <div class="api-status-info">
+            <div class="api-status-info text-primary">
                 <span class="status-indicator ${statusClass}" style="position: static; margin: 0;"></span>
-                <span class="api-status-text">${api.name}: ${getStatusText(api.status)}</span>
+                <span class="api-status-text text-primary text-sm">${api.name}: ${getStatusText(api.status)}</span>
             </div>
-            <span class="api-usage-count">Used: ${api.usage}</span>
+            <span class="api-usage-count text-primary-content text-xs">Used: ${api.usage}</span>
         `;
         
         apiStatusList.appendChild(statusItem);

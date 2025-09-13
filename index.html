@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+<html data-theme="dracula">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
@@ -14,24 +15,22 @@
     href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
   />
 </head>
-<body class="bg-gradient-to-br from-slate-100 to-slate-300 text-gray-800 min-h-screen flex justify-center items-center">
-
-  <div class="w-full max-w-5xl h-screen bg-white shadow-lg rounded-lg overflow-y-auto">
+<body>
+  <div class="w-full max-w-5xl h-screen shadow-lg rounded-lg overflow-y-auto">
     <div class="text-center m-5">
         <nav class="flex items-center justify-between">
             <h1 class="text-2xl font-bold">Ai Metadata</h1>
-            <!-- Open the modal using ID.showModal() method -->
-            <button class="text-2xl" onclick="my_modal_2.showModal()"><i class="fas fa-gear"></i></button>
+            <button class="text-1xl" onclick="my_modal_2.showModal()"><i class="fas fa-gear"></i></button>
             <dialog id="my_modal_2" class="modal">
                 <div class="modal-box text-left">
                     <h3 class="text-lg font-bold">Status API</h3>
-                      <div class="mt-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                      <div class="mt-6">
                           <div id="api-status-list" class="space-y-2"></div>
                       </div>
                       
-                      <div class="flex justify-center items-center gap-2 mt-4 mb-4">
-                          <span id="aiStatusDot" class="w-4 h-4 rounded-full border border-white shadow bg-warning"></span>
-                          <span id="aiStatusText" class="text-sm text-gray-500">Checking AI status...</span>
+                      <div class="flex bg-red justify-center items-center gap-2 mt-4 mb-4">
+                          <span id="aiStatusDot" class="w-4 h-4 rounded-full border border-white shadow"></span>
+                          <span id="aiStatusText" class="text-sm text-primary">Checking AI status...</span>
                       </div>
                       
                 </div>
@@ -42,12 +41,12 @@
         </nav>
 
       <!-- Upload -->
-      <div class="mt-6 border-2 border-dashed border-gray-300 rounded-lg p-6 hover:border-primary bg-gray-50 transition">
+      <div class="mt-6 border border-dashed border-primary rounded-lg p-6 hover:border-red transition">
         <input type="file" id="image-upload" accept="image/*" multiple class="hidden"/>
         <label for="image-upload" class="btn btn-primary btn-outline">
-          <i class="fas fa-upload"></i> Pilih Gambar (Multiple)
+          <i class="fas fa-upload"></i> Pilih gambar
         </label>
-        <p class="text-gray-500 text-sm mt-2">Anda dapat memilih beberapa gambar sekaligus (max 20 gambar)</p>
+        <p class="text-primary text-xs mt-2">Anda dapat memilih beberapa gambar sekaligus (max 20 gambar)</p>
         
         <div class="mt-4 relative">
           <div id="image-previews" class="flex gap-3 overflow-x-auto pb-2 w-200 snap-x"></div>
@@ -80,7 +79,7 @@
 
 
       <!-- API Status -->
-     <button id="generate-btn" class="btn bg-gradient-to-r from-emerald-600 to-emerald-500 text-white btn-wide">Generate Metadata</button>
+     <button id="generate-btn" class="btn bg-primary text-primary-content btn-wide">Generate Metadata</button>
 
       <!-- Loading -->
       <div id="loading" class="hidden mt-4 flex flex-col items-center gap-2">
@@ -107,19 +106,19 @@
       </div>
 
       <!-- Download Section -->
-      <div class="mt-8 border-t pt-6">
+      <div class="mt-8 border-t border-primary border-dashed pt-6">
         <h3 class="text-lg font-semibold mb-4">Download Metadata untuk Platform</h3>
         <div class="flex flex-wrap justify-center gap-3">
-          <button id="download-shutterstock" class="btn bg-gradient-to-r from-orange-500 to-orange-400 text-white">
+          <button id="download-shutterstock" class="btn bg-red-600 text-primary-content">
             <i class="fas fa-download"></i> Shutterstock CSV
           </button>
-          <button id="download-adobestock" class="btn bg-gradient-to-r from-red-600 to-red-400 text-white">
+          <button id="download-adobestock" class="btn bg-neutral">
             <i class="fas fa-download"></i> Adobe Stock CSV
           </button>
-          <button id="download-vecteezy" class="btn bg-gradient-to-r from-blue-600 to-blue-400 text-white">
+          <button id="download-vecteezy" class="btn bg-warning text-primary-content">
             <i class="fas fa-download"></i> Vecteezy CSV
           </button>
-          <button id="download-all" class="btn bg-gradient-to-r from-purple-700 to-purple-500 text-white">
+          <button id="download-all" class="btn bg-primary text-primary-content">
             <i class="fas fa-file-archive"></i> Download Semua
           </button>
         </div>
