@@ -1,1014 +1,137 @@
 <!DOCTYPE html>
-<html lang="id">
+<html lang="id" data-theme="light">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Image Metadata Generator (Microstock Format)</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <style>
-        :root {
-            --primary: #3498db;
-            --success: #2ecc71;
-            --warning: #f39c12;
-            --danger: #e74c3c;
-            --dark: #2c3e50;
-            --light: #ecf0f1;
-            --gray: #95a5a6;
-        }
-        
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
-        
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-            color: #333;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            margin: 0;
-            padding: 20px;
-        }
-
-        .container {
-            background: #fff;
-            padding: 30px;
-            border-radius: 15px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
-            width: 100%;
-            max-width: 1000px;
-            text-align: center;
-        }
-
-        h1 {
-            color: var(--dark);
-            margin-bottom: 10px;
-            font-size: 28px;
-        }
-
-        .subtitle {
-            color: #7f8c8d;
-            margin-bottom: 25px;
-            font-size: 16px;
-        }
-
-        .upload-area {
-            margin: 25px 0;
-            border: 3px dashed #bdc3c7;
-            padding: 30px;
-            border-radius: 12px;
-            position: relative;
-            transition: all 0.3s;
-            background: #f9f9f9;
-        }
-
-        .upload-area:hover {
-            border-color: var(--primary);
-            background: #f0f8ff;
-        }
-
-        #image-upload {
-            display: none;
-        }
-
-        .upload-area label {
-            display: inline-block;
-            padding: 12px 25px;
-            background: linear-gradient(to right, var(--primary), #2980b9);
-            color: #fff;
-            border-radius: 50px;
-            cursor: pointer;
-            transition: all 0.3s;
-            font-weight: 600;
-            box-shadow: 0 4px 8px rgba(52, 152, 219, 0.3);
-        }
-
-        .upload-area label:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 12px rgba(52, 152, 219, 0.4);
-        }
-
-        .upload-area p {
-            margin-top: 15px;
-            color: #7f8c8d;
-            font-size: 14px;
-        }
-
-        .preview-container {
-            margin-top: 20px;
-            position: relative;
-        }
-
-        #image-previews {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 15px;
-            margin-top: 15px;
-            padding: 10px 0;
-            justify-content: center;
-        }
-
-        .preview-item {
-            position: relative;
-            width: 120px;
-            height: 120px;
-            border-radius: 8px;
-            overflow: hidden;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-            transition: transform 0.3s;
-            flex-shrink: 0;
-        }
-
-        .preview-item:hover {
-            transform: scale(1.05);
-        }
-
-        .preview-item img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-
-        .preview-item .file-name {
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            background: rgba(0, 0, 0, 0.7);
-            color: #fff;
-            padding: 4px;
-            font-size: 11px;
-            text-align: center;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-        }
-
-        /* Status indicator as dot */
-        .status-indicator {
-            position: absolute;
-            top: 8px;
-            right: 8px;
-            width: 16px;
-            height: 16px;
-            border-radius: 50%;
-            border: 2px solid white;
-            box-shadow: 0 0 3px rgba(0, 0, 0, 0.3);
-        }
-
-        .status-ready {
-            background: var(--success);
-        }
-
-        .status-processing {
-            background: var(--primary);
-        }
-
-        .status-error {
-            background: var(--danger);
-        }
-
-        .preview-nav {
-            display: flex;
-            justify-content: center;
-            margin-top: 10px;
-            gap: 10px;
-        }
-
-        .preview-nav-btn {
-            background: var(--dark);
-            color: white;
-            border: none;
-            border-radius: 50%;
-            width: 30px;
-            height: 30px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .metadata-container {
-            margin: 25px 0;
-        }
-
-        .tabs {
-            display: flex;
-            border-bottom: 2px solid #eee;
-            margin-bottom: 15px;
-            flex-wrap: wrap;
-        }
-
-        .tab {
-            padding: 10px 20px;
-            cursor: pointer;
-            background: #f8f9fa;
-            border: 1px solid #ddd;
-            border-bottom: none;
-            border-radius: 5px 5px 0 0;
-            margin-right: 5px;
-            transition: all 0.3s;
-            margin-bottom: 5px;
-        }
-
-        .tab.active {
-            background: var(--primary);
-            color: white;
-            border-color: var(--primary);
-        }
-
-        .tab-content {
-            display: none;
-            text-align: left;
-        }
-
-        .tab-content.active {
-            display: block;
-        }
-
-        .metadata-output {
-            width: 100%;
-            padding: 15px;
-            border-radius: 8px;
-            border: 1px solid #ddd;
-            box-sizing: border-box;
-            font-family: 'Courier New', Courier, monospace;
-            background: #f8f9fa;
-            min-height: 200px;
-            resize: vertical;
-            white-space: pre;
-            overflow-x: auto;
-        }
-
-        #generate-btn {
-            padding: 12px 25px;
-            background: linear-gradient(to right, var(--success), #27ae60);
-            color: #fff;
-            border: none;
-            border-radius: 50px;
-            cursor: pointer;
-            font-size: 16px;
-            font-weight: 600;
-            transition: all 0.3s;
-            box-shadow: 0 4px 8px rgba(46, 204, 113, 0.3);
-            margin: 10px 0 20px;
-        }
-
-        #generate-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 12px rgba(46, 204, 113, 0.4);
-        }
-
-        #generate-btn:disabled {
-            background: var(--gray);
-            cursor: not-allowed;
-            transform: none;
-            box-shadow: none;
-        }
-
-        .download-section {
-            margin-top: 25px;
-            padding-top: 20px;
-            border-top: 1px solid #eee;
-        }
-
-        .download-section h3 {
-            color: var(--dark);
-            margin-bottom: 15px;
-        }
-
-        .download-buttons {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 12px;
-            justify-content: center;
-        }
-
-        .download-btn {
-            padding: 10px 20px;
-            color: #fff;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 14px;
-            font-weight: 600;
-            transition: all 0.3s;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .download-btn i {
-            font-size: 16px;
-            pointer-events: none;
-        }
-
-        .download-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-        }
-
-        .download-btn.shutterstock {
-            background: linear-gradient(to right, #ff6b35, #f59331);
-        }
-
-        .download-btn.adobestock {
-            background: linear-gradient(to right, #fa0f00, #ff4b2b);
-        }
-
-        .download-btn.vecteezy {
-            background: linear-gradient(to right, #0d6efd, #3d91e7);
-        }
-
-        .download-btn.all {
-            background: linear-gradient(to right, #6610f2, #8e44ad);
-        }
-
-        .hidden {
-            display: none;
-        }
-
-        #loading {
-            margin: 15px 0;
-            color: var(--primary);
-            font-size: 16px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-        }
-
-        .spinner {
-            width: 24px;
-            height: 24px;
-            border: 3px solid rgba(52, 152, 219, 0.3);
-            border-radius: 50%;
-            border-top-color: var(--primary);
-            animation: spin 1s ease-in-out infinite;
-        }
-
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-
-        .notification {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            padding: 15px 20px;
-            border-radius: 8px;
-            background: var(--success);
-            color: white;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
-            transform: translateX(100%);
-            opacity: 0;
-            transition: all 0.3s;
-            z-index: 1000;
-            max-width: 350px;
-        }
-
-        .notification.show {
-            transform: translateX(0);
-            opacity: 1;
-        }
-
-        .notification.error {
-            background: var(--danger);
-        }
-
-        .image-count {
-            margin-top: 10px;
-            font-size: 14px;
-            color: var(--dark);
-            text-align: center;
-        }
-
-        .file-counter {
-            margin-top: 15px;
-            padding: 8px 15px;
-            background: var(--light);
-            border-radius: 20px;
-            font-size: 14px;
-            color: var(--dark);
-            display: inline-block;
-        }
-
-        @media (max-width: 768px) {
-            .container {
-                padding: 20px;
-            }
-            
-            .download-buttons {
-                flex-direction: column;
-            }
-            
-            .download-btn {
-                width: 100%;
-            }
-            
-            .tabs {
-                flex-wrap: wrap;
-            }
-            
-            .tab {
-                margin-bottom: 5px;
-                padding: 8px 15px;
-                font-size: 14px;
-            }
-            
-            .preview-item {
-                width: 100px;
-                height: 100px;
-            }
-        }
-        
-        .ai-ready { background: var(--success); }
-        .ai-bandwidth { background: var(--warning); }
-        .ai-inactive { background: var(--danger); }
-
-        #image-previews {
-            display: flex;
-            overflow-x: auto;
-            gap: 12px;
-            padding-bottom: 8px;
-            scroll-snap-type: x mandatory;
-        }
-        
-        .preview-item {
-            flex: 0 0 auto;
-            scroll-snap-align: start;
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Image Metadata Generator (Microstock Format)</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link
+    href="https://cdn.jsdelivr.net/npm/daisyui@4.12.10/dist/full.min.css"
+    rel="stylesheet"
+    type="text/css"
+  />
+  <link
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+  />
 </head>
-<body>
+<body class="bg-gradient-to-br from-slate-100 to-slate-300 text-gray-800 min-h-screen flex justify-center items-center">
 
-    <div class="container">
-        <h1>Image Metadata Generator (Microstock)</h1>
-        <p class="subtitle">Unggah beberapa gambar, dan AI akan membuat metadata untuk microstock</p>
-
-        <div class="upload-area">
-            <input type="file" id="image-upload" accept="image/*" multiple>
-            <label for="image-upload"><i class="fas fa-upload"></i> Pilih Gambar (Multiple)</label>
-            <p>Anda dapat memilih beberapa gambar sekaligus (max 20 gambar)</p>
-            
-            <div class="preview-container">
-                <div id="image-previews"></div>
-                <div class="preview-nav hidden">
-                    <button class="preview-nav-btn" id="prev-btn"><i class="fas fa-chevron-left"></i></button>
-                    <button class="preview-nav-btn" id="next-btn"><i class="fas fa-chevron-right"></i></button>
+  <div class="w-full max-w-5xl h-screen bg-white shadow-lg rounded-lg overflow-y-auto">
+    <div class="text-center m-5">
+        <nav class="flex items-center justify-between">
+            <h1 class="text-2xl font-bold">Ai Metadata</h1>
+            <!-- Open the modal using ID.showModal() method -->
+            <button class="text-2xl" onclick="my_modal_2.showModal()"><i class="fas fa-gear"></i></button>
+            <dialog id="my_modal_2" class="modal">
+                <div class="modal-box text-left">
+                    <h3 class="text-lg font-bold">Status API</h3>
+                      <div class="mt-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                          <div id="api-status-list" class="space-y-2"></div>
+                      </div>
+                      
+                      <div class="flex justify-center items-center gap-2 mt-4 mb-4">
+                          <span id="aiStatusDot" class="w-4 h-4 rounded-full border border-white shadow bg-warning"></span>
+                          <span id="aiStatusText" class="text-sm text-gray-500">Checking AI status...</span>
+                      </div>
+                      
                 </div>
-                <div class="image-count hidden">Ditampilkan <span id="current-range">0-0</span> dari <span id="total-images">0</span> gambar</div>
-                
-                <div class="file-counter hidden">
-                    <span id="uploaded-count">0</span> dari <span id="max-files">20</span> file terunggah
-                </div>
-            </div>
-        </div>
+                <form method="dialog" class="modal-backdrop">
+                    <button>close</button>
+                </form>
+            </dialog>
+        </nav>
+
+      <!-- Upload -->
+      <div class="mt-6 border-2 border-dashed border-gray-300 rounded-lg p-6 hover:border-primary bg-gray-50 transition">
+        <input type="file" id="image-upload" accept="image/*" multiple class="hidden"/>
+        <label for="image-upload" class="btn btn-primary btn-outline">
+          <i class="fas fa-upload"></i> Pilih Gambar (Multiple)
+        </label>
+        <p class="text-gray-500 text-sm mt-2">Anda dapat memilih beberapa gambar sekaligus (max 20 gambar)</p>
         
-        <div style="display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 12px;">
-            <span id="aiStatusDot" class="status-indicator" style="position: static; border: 2px solid white; box-shadow: none;"></span>
-            <span id="aiStatusText" style="font-size: 14px; color: #555;">Checking AI status...</span>
+        <div class="mt-4 relative">
+          <div id="image-previews" class="flex gap-3 overflow-x-auto pb-2 w-200 snap-x"></div>
+          <div class="preview-nav hidden flex justify-center gap-3 mt-3">
+            <button id="prev-btn" class="btn btn-circle btn-sm"><i class="fas fa-chevron-left"></i></button>
+            <button id="next-btn" class="btn btn-circle btn-sm"><i class="fas fa-chevron-right"></i></button>
+          </div>
+          <div class="image-count hidden text-sm text-gray-600 mt-2">Ditampilkan <span id="current-range">0-0</span> dari <span id="total-images">0</span> gambar</div>
+          <div class="file-counter hidden mt-3 badge badge-sm badge-slate-100">
+            <span id="uploaded-count" class="mr-1">0</span> dari <span id="max-files" class=mx-1> 20 </span> file terunggah
+          </div>
         </div>
-
-        <button id="generate-btn">Generate Metadata</button>
-        
-        <div id="loading" class="hidden">
-            <div class="spinner"></div>
-            <span>Memproses gambar...</span>
-        </div>
-
-        <div class="metadata-container">
-            <div class="tabs">
-                <button class="tab active" data-tab="all">Semua Metadata</button>
-                <button class="tab" data-tab="shutterstock">Shutterstock</button>
-                <button class="tab" data-tab="adobestock">Adobe Stock</button>
-                <button class="tab" data-tab="vecteezy">Vecteezy</button>
-            </div>
-            
-            <div class="tab-content active" id="all-content">
-                <textarea class="metadata-output" id="metadata-all" readonly placeholder="Metadata akan muncul di sini setelah diproses..."></textarea>
-            </div>
-            
-            <div class="tab-content" id="shutterstock-content">
-                <textarea class="metadata-output" id="metadata-shutterstock" readonly placeholder="Metadata Shutterstock akan muncul di sini..."></textarea>
-            </div>
-            
-            <div class="tab-content" id="adobestock-content">
-                <textarea class="metadata-output" id="metadata-adobestock" readonly placeholder="Metadata Adobe Stock akan muncul di sini..."></textarea>
-            </div>
-            
-            <div class="tab-content" id="vecteezy-content">
-                <textarea class="metadata-output" id="metadata-vecteezy" readonly placeholder="Metadata Vecteezy akan muncul di sini..."></textarea>
-            </div>
-        </div>
-
-        <div class="download-section">
-            <h3>Download Metadata untuk Platform</h3>
-            <div class="download-buttons">
-                <button id="download-shutterstock" class="download-btn shutterstock">
-                    <i class="fas fa-download"></i> Shutterstock CSV
-                </button>
-                <button id="download-adobestock" class="download-btn adobestock">
-                    <i class="fas fa-download"></i> Adobe Stock CSV
-                </button>
-                <button id="download-vecteezy" class="download-btn vecteezy">
-                    <i class="fas fa-download"></i> Vecteezy CSV
-                </button>
-                <button id="download-all" class="download-btn all">
-                    <i class="fas fa-file-archive"></i> Download Semua
-                </button>
-            </div>
+      </div>
+      
+    <div class="flex justify-between items-center my-2">
+        <h3 class="font-semibold">Pilih Jenis Konten:</h3>
+        <div class="flex text-sm">
+             <div class="flex flex-wrap justify-center gap-6">
+     <label class="label cursor-pointer flex items-center gap-2">
+         <input type="checkbox" id="vector-checkbox" class="checkbox checkbox-xs checkbox-primary" />
+         <span>Vector (.eps)</span>
+     </label>
+     <label class="label cursor-pointer flex items-center gap-2">
+         <input type="checkbox" id="video-checkbox" class="checkbox checkbox-xs checkbox-primary" />
+         <span>Video (.mp4)</span>
+     </label>
+ </div>  
         </div>
     </div>
 
-    <div id="notification" class="notification"></div>
 
-    <script>
-        // Elemen DOM
-        const imageUpload = document.getElementById('image-upload');
-        const imagePreviews = document.getElementById('image-previews');
-        const prevBtn = document.getElementById('prev-btn');
-        const nextBtn = document.getElementById('next-btn');
-        const previewNav = document.querySelector('.preview-nav');
-        const imageCount = document.querySelector('.image-count');
-        const currentRange = document.getElementById('current-range');
-        const totalImages = document.getElementById('total-images');
-        const generateBtn = document.getElementById('generate-btn');
-        const loading = document.getElementById('loading');
-        const tabs = document.querySelectorAll('.tab');
-        const tabContents = document.querySelectorAll('.tab-content');
-        const metadataAll = document.getElementById('metadata-all');
-        const metadataShutterstock = document.getElementById('metadata-shutterstock');
-        const metadataAdobestock = document.getElementById('metadata-adobestock');
-        const metadataVecteezy = document.getElementById('metadata-vecteezy');
-        const downloadShutterstockBtn = document.getElementById('download-shutterstock');
-        const downloadAdobestockBtn = document.getElementById('download-adobestock');
-        const downloadVecteezyBtn = document.getElementById('download-vecteezy');
-        const downloadAllBtn = document.getElementById('download-all');
-        const notification = document.getElementById('notification');
-        const fileCounter = document.querySelector('.file-counter');
-        const uploadedCount = document.getElementById('uploaded-count');
-        const maxFiles = document.getElementById('max-files');
-        const aiStatusDot = document.getElementById('aiStatusDot');
-        const aiStatusText = document.getElementById('aiStatusText');
+      <!-- API Status -->
+     <button id="generate-btn" class="btn bg-gradient-to-r from-emerald-600 to-emerald-500 text-white btn-wide">Generate Metadata</button>
 
-        // Variabel state
-        let uploadedImages = [];
-        let currentMetadata = [];
-        let currentIndex = 0;
-        const MAX_FILES = 20;
-        const IMAGESPERPAGE = 12;
+      <!-- Loading -->
+      <div id="loading" class="hidden mt-4 flex flex-col items-center gap-2">
+        <span class="loading loading-spinner loading-md text-primary"></span>
+        <span class="text-primary">Memproses gambar...</span>
+        <div id="progress-info" class="text-sm text-gray-500">0 dari 0 gambar selesai</div>
+      </div>
 
-        // API Configuration
-        const APIKEY = "AIzaSyBnpi-ZnhpoXT_wUAMGjuCghrLob6C2p50";
-        const GEMINI_ENDPOINT = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${APIKEY}`;
-
-        // Tampilkan notifikasi
-        function showNotification(message, isError = false) {
-            notification.textContent = message;
-            notification.classList.remove('error');
-            if (isError) notification.classList.add('error');
-            notification.classList.add('show');
-            
-            setTimeout(() => {
-                notification.classList.remove('show');
-            }, 3000);
-        }
-
-        // Update counter file
-        function updateFileCounter() {
-            uploadedCount.textContent = uploadedImages.length;
-            maxFiles.textContent = MAX_FILES;
-            
-            if (uploadedImages.length > 0) {
-                fileCounter.classList.remove('hidden');
-            } else {
-                fileCounter.classList.add('hidden');
-            }
-        }
-
-        // Update tampilan navigasi gambar
-        function updatePreviewNavigation() {
-            if (uploadedImages.length <= IMAGESPERPAGE) {
-                previewNav.classList.add('hidden');
-                imageCount.classList.add('hidden');
-                return;
-            }
-            
-            previewNav.classList.remove('hidden');
-            imageCount.classList.remove('hidden');
-            
-            const start = currentIndex + 1;
-            const end = Math.min(currentIndex + IMAGESPERPAGE, uploadedImages.length);
-            currentRange.textContent = `${start}-${end}`;
-            totalImages.textContent = uploadedImages.length;
-            
-            prevBtn.disabled = currentIndex === 0;
-            nextBtn.disabled = currentIndex + IMAGESPERPAGE >= uploadedImages.length;
-        }
-
-        // Update status indicator
-        function updateStatusIndicator(index, status) {
-            const previewItems = document.querySelectorAll('.preview-item');
-            if (previewItems[index]) {
-                const indicator = previewItems[index].querySelector('.status-indicator');
-                if (indicator) {
-                    indicator.className = `status-indicator status-${status}`;
-                }
-            }
-        }
-
-        // Tampilkan gambar yang diunggah
-        function displayImages() {
-            imagePreviews.innerHTML = '';
-            
-            const end = Math.min(currentIndex + IMAGESPERPAGE, uploadedImages.length);
-            
-            for (let i = currentIndex; i < end; i++) {
-                const image = uploadedImages[i];
-                const previewItem = document.createElement('div');
-                previewItem.className = 'preview-item';
-                previewItem.innerHTML = `
-                    <img src="${image.preview}" alt="Preview">
-                    <div class="file-name">${image.originalName}</div>
-                    <div class="status-indicator status-ready"></div>
-                `;
-                imagePreviews.appendChild(previewItem);
-            }
-            
-            updatePreviewNavigation();
-            updateFileCounter();
-        }
-
-        // Preview gambar yang diunggah
-        imageUpload.addEventListener('change', function(event) {
-            const files = event.target.files;
-            if (!files.length) return;
-            
-            const limitedFiles = Array.from(files).slice(0, MAX_FILES);
-            
-            uploadedImages = [];
-            currentIndex = 0;
-            
-            metadataAll.value = '';
-            metadataShutterstock.value = '';
-            metadataAdobestock.value = '';
-            metadataVecteezy.value = '';
-            currentMetadata = [];
-            
-            limitedFiles.forEach((file, index) => {
-                const reader = new FileReader();
-                
-                reader.onload = function(e) {
-                    uploadedImages.push({
-                        originalName: file.name,
-                        base64: e.target.result.split(',')[1],
-                        preview: e.target.result,
-                        type: file.type,
-                        file: file
-                    });
-                    
-                    if (uploadedImages.length === limitedFiles.length) {
-                        displayImages();
-                    }
-                };
-                
-                reader.onerror = function() {
-                    console.error('Error reading file:', file.name);
-                };
-                
-                reader.readAsDataURL(file);
-            });
-            
-            if (limitedFiles.length < files.length) {
-                showNotification(`Hanya ${MAX_FILES} gambar pertama yang diproses.`, true);
-            }
-        });
-
-        // Navigasi gambar
-        prevBtn.addEventListener('click', function() {
-            if (currentIndex > 0) {
-                currentIndex -= IMAGESPERPAGE;
-                displayImages();
-            }
-        });
-
-        nextBtn.addEventListener('click', function() {
-            if (currentIndex + IMAGESPERPAGE < uploadedImages.length) {
-                currentIndex += IMAGESPERPAGE;
-                displayImages();
-            }
-        });
-
-        // Tab navigation
-        tabs.forEach(tab => {
-            tab.addEventListener('click', function() {
-                const tabId = this.getAttribute('data-tab');
-                
-                tabs.forEach(t => t.classList.remove('active'));
-                this.classList.add('active');
-                
-                tabContents.forEach(content => content.classList.remove('active'));
-                document.getElementById(`${tabId}-content`).classList.add('active');
-            });
-        });
-
-        // Fungsi untuk mengirim gambar ke API AI
-        async function processImage(image) {
-            const promptText = `
-    Generate microstock metadata for this image in a CSV-like format.
-    The output should be a single line with four columns: filename,title,description,keywords.
-    All text must be in English.
-
-    filename: ${image.originalName} (use the actual uploaded file name exactly as provided)
-    
-    title: A concise, descriptive title that includes the most important 5W1H elements (What, Who, When, Where, Why, How) relevant to the image. Max 50-70 characters.
-    
-    description: A detailed description of the image content, including subjects, colors, emotions, context, potential uses, and 5W1H elements. Max 150-200 characters.
-    
-    keywords: 20-30 highly relevant, comma-separated keywords, including synonyms and long-tail terms.
-
-    Example Format:
-    ${image.originalName},"A captivating title here","A detailed description of the image content, including colors, subjects, and mood. Suitable for various projects.","keyword1, keyword2, keyword3, keyword4, keyword5"
-
-    Do NOT include any other text or explanation. Only output the single line of metadata.
-    IMPORTANT: Use the exact filename as provided without any changes.
-`;
-
-            try {
-                const requestBody = {
-                    contents: [{
-                        parts: [
-                            { text: promptText },
-                            {
-                                inline_data: {
-                                    mime_type: image.type || "image/jpeg",
-                                    data: image.base64
-                                }
-                            }
-                        ]
-                    }],
-                    generationConfig: {
-                        temperature: 0.7,
-                        topK: 40,
-                        topP: 0.95,
-                        maxOutputTokens: 1024,
-                    }
-                };
-
-                const response = await fetch(GEMINI_ENDPOINT, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(requestBody)
-                });
-
-                if (!response.ok) {
-                    const errorText = await response.text();
-                    throw new Error(`API Error: ${response.status}`);
-                }
-
-                const data = await response.json();
-                
-                if (!data.candidates || !data.candidates[0] || !data.candidates[0].content || !data.candidates[0].content.parts || !data.candidates[0].content.parts[0]) {
-                    throw new Error("Unexpected API response format");
-                }
-                
-                return data.candidates[0].content.parts[0].text.trim();
-            } catch (error) {
-                console.error('Error processing image:', error);
-                return `${image.originalName},"Beautiful landscape scene","A stunning landscape with mountains and lake under clear blue sky, perfect for nature themes and travel websites","landscape, nature, mountains, lake, sky, outdoor, scenic, beautiful, peaceful, travel, tourism, vacation, environment, wilderness, natural, countryside, hills, water, reflection, cloud, serene, majestic, panoramic, view, summer"`;
-            }
-        }
-
-        // Fungsi untuk mengurai metadata dari output AI
-        function parseMetadata(metadataText, originalFilename) {
-            const cleanText = metadataText.replace(/```csv|```/g, '').trim();
-            const lines = cleanText.split('\n');
-            let dataLine = '';
-            
-            for (const line of lines) {
-                if (line.includes(originalFilename) || line.startsWith(originalFilename)) {
-                    dataLine = line;
-                    break;
-                }
-            }
-            
-            if (!dataLine && lines.length > 0) {
-                dataLine = lines[0];
-            }
-            
-            if (!dataLine) return null;
-            
-            const regex = /(?:,|^)(?:"([^"]*)"|([^",]*))/g;
-            let matches;
-            const fields = [];
-            
-            while ((matches = regex.exec(dataLine)) !== null) {
-                const value = matches[1] || matches[2] || '';
-                fields.push(value.trim());
-            }
-            
-            while (fields.length < 4) {
-                fields.push('');
-            }
-            
-            return {
-                filename: originalFilename,
-                title: fields[1] || 'No title generated',
-                description: fields[2] || 'No description generated',
-                keywords: fields[3] || 'keywords'
-            };
-        }
-
-        // Fungsi untuk mendownload file CSV
-        function downloadCSV(content, filename) {
-            const blob = new Blob([content], { type: 'text/csv;charset=utf-8;' });
-            const link = document.createElement('a');
-            const url = URL.createObjectURL(blob);
-            
-            link.setAttribute('href', url);
-            link.setAttribute('download', filename);
-            link.style.visibility = 'hidden';
-            
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-        }
-
-        // Fungsi untuk membuat konten CSV Shutterstock
-        function createShutterstockCSV(metadataArray) {
-            let csvContent = 'filename,description,keywords\n';
-            metadataArray.forEach(meta => {
-                csvContent += `"${meta.filename}","${meta.description}","${meta.keywords}"\n`;
-            });
-            return csvContent;
-        }
-
-        // Fungsi untuk membuat konten CSV Adobe Stock
-        function createAdobestockCSV(metadataArray) {
-            let csvContent = 'filename,title,keywords\n';
-            metadataArray.forEach(meta => {
-                csvContent += `"${meta.filename}","${meta.description}","${meta.keywords}"\n`;
-            });
-            return csvContent;
-        }
-
-        // Fungsi untuk membuat konten CSV Vecteezy
-        function createVecteezyCSV(metadataArray) {
-            let csvContent = 'filename,title,keywords\n';
-            metadataArray.forEach(meta => {
-                csvContent += `"${meta.filename}","${meta.description}","${meta.keywords}"\n`;
-            });
-            return csvContent;
-        }
-
-        // Update semua tab metadata
-        function updateAllMetadataTabs() {
-            if (!currentMetadata.length) return;
-            
-            let allContent = 'filename,title,description,keywords\n';
-            currentMetadata.forEach(meta => {
-                allContent += `"${meta.filename}","${meta.title}","${meta.description}","${meta.keywords}"\n`;
-            });
-            metadataAll.value = allContent;
-            
-            metadataShutterstock.value = createShutterstockCSV(currentMetadata);
-            metadataAdobestock.value = createAdobestockCSV(currentMetadata);
-            metadataVecteezy.value = createVecteezyCSV(currentMetadata);
-        }
+      <!-- Metadata Output -->
+      <div class="mt-6">
+        <div role="tablist" class="tabs tabs-boxed justify-between flex-grow">
+          <button class="tab tab-active" data-tab="all">Semua</button>
+          <button class="tab" data-tab="shutterstock">Shutterstock</button>
+          <button class="tab" data-tab="adobestock">AdobeStock</button>
+          <button class="tab" data-tab="vecteezy">Vecteezy</button>
+        </div>
         
-        async function checkAIStatus() {
-            try {
-                const res = await fetch(GEMINI_ENDPOINT, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ contents: [{ parts: [{ text: "ping" }] }] })
-                });
-                
-                if (res.ok) {
-                    aiStatusDot.className = 'status-indicator ai-ready';
-                    aiStatusText.textContent = 'AI Status: Ready';
-                    generateBtn.disabled = false;
-                } else if (res.status === 429) {
-                    aiStatusDot.className = 'status-indicator ai-bandwidth';
-                    aiStatusText.textContent = 'AI Status: Bandwidth Full';
-                    generateBtn.disabled = true;
-                } else {
-                    aiStatusDot.className = 'status-indicator ai-inactive';
-                    aiStatusText.textContent = 'AI Status: Inactive';
-                    generateBtn.disabled = true;
-                }
-            } catch (error) {
-                aiStatusDot.className = 'status-indicator ai-inactive';
-                aiStatusText.textContent = 'AI Status: Inactive';
-                generateBtn.disabled = true;
-                console.error('AI status check failed:', error);
-            }
-        }
+        <div class="mt-3">
+          <textarea id="metadata-all" class="textarea textarea-bordered w-full h-52 font-mono text-sm" readonly placeholder="Metadata akan muncul di sini setelah diproses..."></textarea>
+          <textarea id="metadata-shutterstock" class="textarea textarea-bordered w-full h-52 font-mono text-sm hidden" readonly placeholder="Metadata Shutterstock..."></textarea>
+          <textarea id="metadata-adobestock" class="textarea textarea-bordered w-full h-52 font-mono text-sm hidden" readonly placeholder="Metadata Adobe Stock..."></textarea>
+          <textarea id="metadata-vecteezy" class="textarea textarea-bordered w-full h-52 font-mono text-sm hidden" readonly placeholder="Metadata Vecteezy..."></textarea>
+        </div>
+      </div>
 
-        checkAIStatus();
+      <!-- Download Section -->
+      <div class="mt-8 border-t pt-6">
+        <h3 class="text-lg font-semibold mb-4">Download Metadata untuk Platform</h3>
+        <div class="flex flex-wrap justify-center gap-3">
+          <button id="download-shutterstock" class="btn bg-gradient-to-r from-orange-500 to-orange-400 text-white">
+            <i class="fas fa-download"></i> Shutterstock CSV
+          </button>
+          <button id="download-adobestock" class="btn bg-gradient-to-r from-red-600 to-red-400 text-white">
+            <i class="fas fa-download"></i> Adobe Stock CSV
+          </button>
+          <button id="download-vecteezy" class="btn bg-gradient-to-r from-blue-600 to-blue-400 text-white">
+            <i class="fas fa-download"></i> Vecteezy CSV
+          </button>
+          <button id="download-all" class="btn bg-gradient-to-r from-purple-700 to-purple-500 text-white">
+            <i class="fas fa-file-archive"></i> Download Semua
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
 
-        // Event listener untuk tombol 
-        generateBtn.addEventListener('click', async function() {
-            if (!uploadedImages.length) {
-                showNotification('Silakan unggah gambar terlebih dahulu.', true);
-                return;
-            }
+  <div id="notification" class="toast toast-top toast-end hidden">
+    <div class="alert alert-success">Sukses!</div>
+  </div>
 
-            generateBtn.disabled = true;
-            loading.classList.remove('hidden');
-            metadataAll.value = 'filename,title,description,keywords\n\nMemproses gambar...';
-
-            try {
-                currentMetadata = [];
-                
-                for (let i = 0; i < uploadedImages.length; i++) {
-                    const image = uploadedImages[i];
-                    metadataAll.value = `filename,title,description,keywords\n\nMemproses gambar ${i+1} dari ${uploadedImages.length}...`;
-                    
-                    updateStatusIndicator(i, 'processing');
-                    
-                    try {
-                        const aiResponse = await processImage(image);
-                        const metadata = parseMetadata(aiResponse, image.originalName);
-                        
-                        if (metadata) {
-                            currentMetadata.push(metadata);
-                            updateStatusIndicator(i, 'ready');
-                        } else {
-                            currentMetadata.push({
-                                filename: image.originalName,
-                                title: 'No title generated',
-                                description: 'No description generated',
-                                keywords: 'keywords'
-                            });
-                            updateStatusIndicator(i, 'error');
-                        }
-                    } catch (error) {
-                        console.error(`Error processing image ${image.originalName}:`, error);
-                        currentMetadata.push({
-                            filename: image.originalName,
-                            title: 'No title generated',
-                            description: 'No description generated',
-                            keywords: 'keywords'
-                        });
-                        updateStatusIndicator(i, 'error');
-                    }
-                }
-                
-                updateAllMetadataTabs();
-                showNotification(`Berhasil membuat metadata untuk ${uploadedImages.length} gambar.`);
-                
-            } catch (error) {
-                console.error('Error:', error);
-                showNotification('Terjadi kesalahan saat memproses gambar.', true);
-                metadataAll.value = `filename,title,description,keywords\n\nError: ${error.message}`;
-            } finally {
-                loading.classList.add('hidden');
-                generateBtn.disabled = false;
-            }
-        });
-
-        // Event listener untuk tombol download
-        [downloadShutterstockBtn, downloadAdobestockBtn, downloadVecteezyBtn, downloadAllBtn].forEach(btn => {
-            btn.addEventListener('click', function() {
-                if (!currentMetadata.length) {
-                    showNotification('Silakan generate metadata terlebih dahulu.', true);
-                    return;
-                }
-            });
-        });
-
-        downloadShutterstockBtn.addEventListener('click', function() {
-            const csvContent = createShutterstockCSV(currentMetadata);
-            downloadCSV(csvContent, 'shutterstock_metadata.csv');
-            showNotification('File Shutterstock CSV berhasil didownload.');
-        });
-
-        downloadAdobestockBtn.addEventListener('click', function() {
-            const csvContent = createAdobestockCSV(currentMetadata);
-            downloadCSV(csvContent, 'adobestock_metadata.csv');
-            showNotification('File Adobe Stock CSV berhasil didownload.');
-        });
-
-        downloadVecteezyBtn.addEventListener('click', function() {
-            const csvContent = createVecteezyCSV(currentMetadata);
-            downloadCSV(csvContent, 'vecteezy_metadata.csv');
-            showNotification('File Vecteezy CSV berhasil didownload.');
-        });
-
-        downloadAllBtn.addEventListener('click', function() {
-            downloadCSV(createShutterstockCSV(currentMetadata), 'shutterstock_metadata.csv');
-            downloadCSV(createAdobestockCSV(currentMetadata), 'adobestock_metadata.csv');
-            downloadCSV(createVecteezyCSV(currentMetadata), 'vecteezy_metadata.csv');
-            showNotification('Semua file CSV berhasil didownload.');
-        });
-    </script>
+  <script src="script.js"></script>
 </body>
 </html>
