@@ -7,16 +7,14 @@ const API_CONFIGS = [
         usage: 0,
         lastUsed: 0,
         status: 'unknown'
-    },
-    // Tambahkan API key lain di sini
-    // {
-    //     key: "YOUR_SECOND_API_KEY",
-    //     endpoint: "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent",
-    //     name: "API Key 2",
-    //     usage: 0,
-    //     lastUsed: 0,
-    //     status: 'unknown'
-    // }
+    },{
+    	key: "AIzaSyAJVzovLU0ovc9ydqkRCGbsxBc4CJZZPQg",
+    	endpoint: "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent",
+    	name: "API Key 2",
+    	usage: 0,
+    	lastUsed: 0,
+    	status: 'unknown'
+    }
 ];
 
 // Elemen DOM
