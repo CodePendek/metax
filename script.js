@@ -14,6 +14,27 @@ const API_CONFIGS = [
     	usage: 0,
     	lastUsed: 0,
     	status: 'unknown'
+    },{
+	key: "AIzaSyCoAEasOlOC9fwKgGrh2zfU2kgRDtjO4XA",
+	endpoint: "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent",
+	name: "API Key 3",
+	usage: 0,
+	lastUsed: 0,
+	status: 'unknown'
+	},{
+	key: "AIzaSyDUG7Eq3zvQ5roZVcoW3MsEDod71YDGp4M",
+	endpoint: "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent",
+	name: "API Key 4",
+	usage: 0,
+	lastUsed: 0,
+	status: 'unknown'
+	},{
+    	key: "AIzaSyDmsapmQeHkBHnaKfrwgiu_esa2Nvdc-CQ",
+    	endpoint: "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent",
+    	name: "API Key 5",
+    	usage: 0,
+    	lastUsed: 0,
+    	status: 'unknown'
     }
 ];
 
