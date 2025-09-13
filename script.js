@@ -367,7 +367,7 @@ description: Write a detailed description (150-200 characters) that tells a stor
 - Potential commercial applications (e.g., website design, advertising, editorial content)
 - Technical details if relevant (e.g., isolated object, copy space)
 - Do NOT mention that it's a vector illustration if vector option is selected
--DO NOT include any special characters, symbols, emojis, quotation marks, hyphens, or parentheses - use only standard letters (A-Z, a-z), numbers (0-9), commas, periods, and spaces.
+- DO NOT include any special characters, symbols, emojis, quotation marks, hyphens, or parentheses - use only standard letters (A-Z, a-z), numbers (0-9), commas, periods, and spaces.
 
 keywords: Provide 25-35 highly relevant, buyer-focused keywords including:
 - Primary subjects and actions
