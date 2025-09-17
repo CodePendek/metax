@@ -1,137 +1,344 @@
 <!DOCTYPE html>
-<html data-theme="dim">
+<html data-theme="nord">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Image Metadata Generator (Microstock Format)</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <link
-    href="https://cdn.jsdelivr.net/npm/daisyui@4.12.10/dist/full.min.css"
-    rel="stylesheet"
-    type="text/css"
-  />
-  <link
-    rel="stylesheet"
-    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
-  />
+  <link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.10/dist/full.min.css" rel="stylesheet" type="text/css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <style>
+    .status-indicator {
+      position: absolute;
+      top: 4px;
+      right: 4px;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      border: 2px solid white;
+    }
+    .status-ready { background-color: #22c55e; }
+    .status-processing { background-color: #f59e0b; animation: pulse 2s infinite; }
+    .status-error { background-color: #ef4444; }
+    .ai-ready { background-color: #22c55e; }
+    .ai-bandwidth { background-color: #f59e0b; }
+    .ai-inactive { background-color: #ef4444; }
+    .preview-item { position: relative; }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+    
+    /* Mobile responsive styles */
+    .metadata-card {
+      @apply bg-base-200 rounded-lg p-4 border border-base-300;
+    }
+    
+    .tab-content-mobile {
+      min-height: 200px;
+    }
+    
+    /* Custom scrollbar for keywords */
+    .keywords-scroll {
+      max-height: 120px;
+      overflow-y: auto;
+    }
+    
+    .keywords-scroll::-webkit-scrollbar {
+      width: 4px;
+    }
+    
+    .keywords-scroll::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    
+    .keywords-scroll::-webkit-scrollbar-thumb {
+      background: #888;
+      border-radius: 2px;
+    }
+    
+    /* Truncate text utility */
+    .truncate-3-lines {
+      display: -webkit-box;
+      -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+  </style>
 </head>
 <body>
-  <div class="w-full max-w-5xl h-screen shadow-lg rounded-lg overflow-y-auto">
-    <div class="text-center m-5">
-        <nav class="flex items-center justify-between">
-            <h1 class="text-2xl font-bold">Ai Metadata</h1>
-            <div>
-              <a href="javascript:window.location.reload()"><i class="fas fa-rotate mr-5"></i></a>
-                          <button class="text-1xl" onclick="my_modal_2.showModal()"><i class="fas fa-unlock"></i></button>
+  <div class="w-full max-w-7xl mx-auto h-[100vh] shadow-lg rounded-lg overflow-y-auto p-4 text-center">
+    <div class="text-center">
+      <nav class="flex items-center justify-between">
+        <h1 class="text-2xl font-bold">AI Metadata Generator</h1>
+        <div>
+          <a href="javascript:window.location.reload()"><i class="fas fa-rotate mr-5"></i></a>
+          <button class="text-1xl" onclick="my_modal_2.showModal()"><i class="fas fa-unlock"></i></button>
+        </div>
+      </nav>
 
-            </div>
-            <dialog id="my_modal_2" class="modal">
-                <div class="modal-box text-left">
-                    <h3 class="text-lg font-bold">Status API</h3>
-                      <div class="mt-6">
-                          <div id="api-status-list" class="space-y-2"></div>
-                      </div>
-                      
-                      <div class="flex bg-red justify-center items-center gap-2 mt-4 mb-4">
-                          <span id="aiStatusDot" class="w-4 h-4 rounded-full border border-white shadow"></span>
-                          <span id="aiStatusText" class="text-sm text-primary">Checking AI status...</span>
-                      </div>
-                      
-                </div>
-                <form method="dialog" class="modal-backdrop">
-                    <button>close</button>
-                </form>
-            </dialog>
-        </nav>
-
-      <!-- Upload -->
-      <div class="mt-6 border border-dashed border-primary rounded-lg p-6 hover:border-red transition">
-        <input type="file" id="image-upload" accept="image/*" multiple class="hidden"/>
-        <label for="image-upload" class="btn btn-primary btn-outline">
-          <i class="fas fa-upload"></i> Pilih gambar
-        </label>
-        <p class="text-primary text-xs mt-2">Anda dapat memilih beberapa gambar sekaligus (max 20 gambar)</p>
-        
-        <div class="mt-4 relative">
-          <div id="image-previews" class="flex gap-3 overflow-x-auto pb-2 w-200 snap-x"></div>
-          <div class="preview-nav hidden flex justify-center gap-3 mt-3">
-            <button id="prev-btn" class="btn btn-circle btn-sm"><i class="fas fa-chevron-left"></i></button>
-            <button id="next-btn" class="btn btn-circle btn-sm"><i class="fas fa-chevron-right"></i></button>
+      <dialog id="my_modal_2" class="modal">
+        <div class="modal-box text-left">
+          <h3 class="text-lg font-bold">API Status</h3>
+          <div class="mt-6">
+            <div id="api-status-list" class="space-y-2"></div>
           </div>
-          <div class="image-count hidden text-sm text-gray-600 mt-2">Ditampilkan <span id="current-range">0-0</span> dari <span id="total-images">0</span> gambar</div>
-          <div class="file-counter hidden mt-3 badge badge-sm badge-slate-100">
-            <span id="uploaded-count" class="mr-1">0</span> dari <span id="max-files" class=mx-1> 20 </span> file terunggah
+          <div class="flex justify-center items-center gap-2 mt-4 mb-4">
+            <span id="aiStatusDot" class="w-4 h-4 rounded-full border border-white shadow"></span>
+            <span id="aiStatusText" class="text-sm text-primary">Checking AI status...</span>
+          </div>
+        </div>
+        <form method="dialog" class="modal-backdrop">
+          <button>close</button>
+        </form>
+      </dialog>
+    </div>
+
+    <!-- Upload Section -->
+    <div class="mt-6 border border-dashed border-primary rounded-lg p-6 hover:border-red transition">
+      <input type="file" id="image-upload" accept="image/*" multiple class="hidden"/>
+      <label for="image-upload" class="btn btn-primary btn-outline">
+        <i class="fas fa-upload"></i> Pilih gambar
+      </label>
+      <p class="text-primary text-xs mt-2">Anda dapat memilih beberapa gambar sekaligus (max 20 gambar)</p>
+      
+      <div class="mt-4 relative">
+        <div id="image-previews" class="flex gap-3 overflow-x-auto pb-2 snap-x"></div>
+        <div class="preview-nav hidden flex justify-center gap-3 mt-3">
+          <button id="prev-btn" class="btn btn-circle btn-sm"><i class="fas fa-chevron-left"></i></button>
+          <button id="next-btn" class="btn btn-circle btn-sm"><i class="fas fa-chevron-right"></i></button>
+        </div>
+        <div class="image-count hidden text-sm text-gray-600 mt-2">
+          Ditampilkan <span id="current-range">0-0</span> dari <span id="total-images">0</span> gambar
+        </div>
+        <div class="file-counter hidden mt-3 badge badge-sm badge-slate-100">
+          <span id="uploaded-count" class="mr-1">0</span> dari <span id="max-files" class="mx-1">20</span> file terunggah
+        </div>
+      </div>
+    </div>
+    
+    <!-- Content Type Selection -->
+    <div class="flex justify-between items-center my-4">
+      <h3 class="font-semibold">Pilih Jenis Konten:</h3>
+      <div class="flex gap-6">
+        <label class="label cursor-pointer flex items-center gap-2">
+          <input type="checkbox" id="vector-checkbox" class="checkbox checkbox-xs checkbox-primary" />
+          <span>Vector (.eps)</span>
+        </label>
+        <label class="label cursor-pointer flex items-center gap-2">
+          <input type="checkbox" id="video-checkbox" class="checkbox checkbox-xs checkbox-primary" />
+          <span>Video (.mp4)</span>
+        </label>
+      </div>
+    </div>
+
+    <!-- Generate Button with Download Modal Trigger -->
+    <div class="flex gap-3 justify-center items-center mb-4">
+      <button id="generate-btn" class="btn bg-primary text-primary-content btn-wide">
+        <i class="fas fa-magic"></i> Generate Metadata
+      </button>
+      <button id="download-modal-btn" class="btn btn-success" disabled onclick="download_modal.showModal()">
+        <i class="fas fa-download"></i> Download
+      </button>
+    </div>
+
+    <!-- Loading -->
+    <div id="loading" class="hidden mt-4 flex flex-col items-center gap-2 mb-4">
+      <span class="loading loading-spinner loading-md text-primary"></span>
+      <span class="text-primary">Memproses gambar...</span>
+      <div id="progress-info" class="text-sm text-gray-500">0 dari 0 gambar selesai</div>
+    </div>
+
+    <!-- Metadata Preview Table -->
+    <div class="mt-6">
+      <h2 class="text-left font-bold">Preview Metadata:</h2>
+      
+      <!-- Mobile Card View -->
+      <div class="block text-left -mt-6 lg:hidden" id="mobile-metadata-view">
+        <div id="mobile-metadata-cards" class="space-y-4">
+          <div class="text-center text-gray-500 py-8">
+            Upload gambar dan generate metadata untuk melihat preview
           </div>
         </div>
       </div>
       
-    <div class="flex justify-between items-center my-2">
-        <h3 class="font-semibold">Pilih Jenis Konten:</h3>
-        <div class="flex text-sm">
-             <div class="flex flex-wrap justify-center gap-6">
-     <label class="label cursor-pointer flex items-center gap-2">
-         <input type="checkbox" id="vector-checkbox" class="checkbox checkbox-xs checkbox-primary" />
-         <span>Vector (.eps)</span>
-     </label>
-     <label class="label cursor-pointer flex items-center gap-2">
-         <input type="checkbox" id="video-checkbox" class="checkbox checkbox-xs checkbox-primary" />
-         <span>Video (.mp4)</span>
-     </label>
- </div>  
+      <!-- Desktop Table View -->
+      <div class="hidden lg:block">
+        <div class="overflow-x-auto max-h-96 overflow-y-auto">
+          <table class="table table-zebra table-xs w-full">
+            <thead class="sticky top-0 bg-base-200">
+              <tr>
+                <th class="w-8">#</th>
+                <th class="w-32">Filename</th>
+                <th class="w-48">Title</th>
+                <th class="w-64">Description</th>
+                <th class="w-16">Count</th>
+                <th class="min-w-96">Keywords</th>
+              </tr>
+            </thead>
+            <tbody id="metadata-table-body">
+              <tr>
+                <td colspan="6" class="text-center text-gray-500 py-8">
+                  Upload gambar dan generate metadata untuk melihat preview
+                </td>
+              </tr>
+            </tbody>
+          </table>
         </div>
-    </div>
-
-
-      <!-- API Status -->
-     <button id="generate-btn" class="btn bg-primary text-primary-content btn-wide">Generate Metadata</button>
-
-      <!-- Loading -->
-      <div id="loading" class="hidden mt-4 flex flex-col items-center gap-2">
-        <span class="loading loading-spinner loading-md text-primary"></span>
-        <span class="text-primary">Memproses gambar...</span>
-        <div id="progress-info" class="text-sm text-gray-500">0 dari 0 gambar selesai</div>
       </div>
-
-      <!-- Metadata Output -->
-      <div class="mt-6">
-        <div role="tablist" class="tabs tabs-boxed justify-between flex-grow">
-          <button class="tab tab-active" data-tab="all">Semua</button>
-          <button class="tab" data-tab="shutterstock">Shutterstock</button>
-          <button class="tab" data-tab="adobestock">AdobeStock</button>
-          <button class="tab" data-tab="vecteezy">Vecteezy</button>
+      
+      <!-- Tab Navigation for Mobile -->
+      <div class="block lg:hidden mt-4" id="mobile-tabs" style="display: none;">
+        <div class="tabs tabs-boxed justify-center">
+          <button class="tab tab-active" data-mobile-tab="overview">Overview</button>
+          <button class="tab" data-mobile-tab="details">Details</button>
+          <button class="tab" data-mobile-tab="keywords">Keywords</button>
         </div>
         
-        <div class="mt-3">
-          <textarea id="metadata-all" class="textarea textarea-bordered w-full h-52 font-mono text-sm" readonly placeholder="Metadata akan muncul di sini setelah diproses..."></textarea>
-          <textarea id="metadata-shutterstock" class="textarea textarea-bordered w-full h-52 font-mono text-sm hidden" readonly placeholder="Metadata Shutterstock..."></textarea>
-          <textarea id="metadata-adobestock" class="textarea textarea-bordered w-full h-52 font-mono text-sm hidden" readonly placeholder="Metadata Adobe Stock..."></textarea>
-          <textarea id="metadata-vecteezy" class="textarea textarea-bordered w-full h-52 font-mono text-sm hidden" readonly placeholder="Metadata Vecteezy..."></textarea>
-        </div>
-      </div>
-
-      <!-- Download Section -->
-      <div class="mt-8 border-t border-primary border-dashed pt-6">
-        <h3 class="text-lg font-semibold mb-4">Download Metadata untuk Platform</h3>
-        <div class="flex flex-wrap justify-center gap-3">
-          <button id="download-shutterstock" class="btn bg-red-600 text-primary-content">
-            <i class="fas fa-download"></i> Shutterstock CSV
-          </button>
-          <button id="download-adobestock" class="btn bg-neutral">
-            <i class="fas fa-download"></i> Adobe Stock CSV
-          </button>
-          <button id="download-vecteezy" class="btn bg-warning text-primary-content">
-            <i class="fas fa-download"></i> Vecteezy CSV
-          </button>
-          <button id="download-all" class="btn bg-primary text-primary-content">
-            <i class="fas fa-file-archive"></i> Download Semua
-          </button>
+        <div id="mobile-tab-content" class="mt-4">
+          <div id="mobile-overview" class="tab-content-mobile"></div>
+          <div id="mobile-details" class="tab-content-mobile hidden"></div>
+          <div id="mobile-keywords" class="tab-content-mobile hidden"></div>
         </div>
       </div>
     </div>
+
+    <!-- Modern Download Modal -->
+    <dialog id="download_modal" class="modal">
+      <div class="modal-box w-11/12 max-w-2xl">
+        <div class="flex items-center gap-3 mb-6">
+          <div class="w-12 h-12 bg-success/20 rounded-full flex items-center justify-center">
+            <i class="fas fa-download text-success text-xl"></i>
+          </div>
+          <div>
+            <h3 class="font-bold text-xl">Download Metadata</h3>
+            <p class="text-sm text-gray-500">Choose your preferred platform format</p>
+          </div>
+        </div>
+
+        <!-- Download Stats -->
+        <div class="grid grid-cols-3 gap-4 mb-6">
+          <div class="stat bg-base-200 rounded-lg p-3">
+            <div class="stat-title text-xs">Total Files</div>
+            <div class="stat-value text-lg" id="modal-total-files">0</div>
+          </div>
+          <div class="stat bg-base-200 rounded-lg p-3">
+            <div class="stat-title text-xs">Avg Keywords</div>
+            <div class="stat-value text-lg" id="modal-avg-keywords">0</div>
+          </div>
+          <div class="stat bg-base-200 rounded-lg p-3">
+            <div class="stat-title text-xs">Quality Score</div>
+            <div class="stat-value text-lg" id="modal-quality-score">0%</div>
+          </div>
+        </div>
+
+        <!-- Platform Options -->
+        <div class="space-y-4">
+          <!-- Shutterstock -->
+          <div class="card bg-base-200 shadow-sm">
+            <div class="card-body p-4">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                  <div class="w-8 h-8 bg-red-600 rounded flex items-center justify-center">
+                    <i class="fas fa-camera text-white text-sm"></i>
+                  </div>
+                  <div>
+                    <h4 class="font-semibold">Shutterstock</h4>
+                    <p class="text-xs text-gray-500">filename, description, keywords</p>
+                  </div>
+                </div>
+                <button id="modal-download-shutterstock" class="btn btn-sm btn-error">
+                  <i class="fas fa-download"></i> CSV
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Adobe Stock -->
+          <div class="card bg-base-200 shadow-sm">
+            <div class="card-body p-4">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                  <div class="w-8 h-8 bg-neutral rounded flex items-center justify-center">
+                    <i class="fas fa-palette text-white text-sm"></i>
+                  </div>
+                  <div>
+                    <h4 class="font-semibold">Adobe Stock</h4>
+                    <p class="text-xs text-gray-500">filename, title, keywords</p>
+                  </div>
+                </div>
+                <button id="modal-download-adobestock" class="btn btn-sm btn-neutral">
+                  <i class="fas fa-download"></i> CSV
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Vecteezy -->
+          <div class="card bg-base-200 shadow-sm">
+            <div class="card-body p-4">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                  <div class="w-8 h-8 bg-warning rounded flex items-center justify-center">
+                    <i class="fas fa-vector-square text-black text-sm"></i>
+                  </div>
+                  <div>
+                    <h4 class="font-semibold">Vecteezy</h4>
+                    <p class="text-xs text-gray-500">filename, title, keywords</p>
+                  </div>
+                </div>
+                <button id="modal-download-vecteezy" class="btn btn-sm btn-warning">
+                  <i class="fas fa-download"></i> CSV
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Download All -->
+          <div class="card bg-primary/10 shadow-sm border border-primary/20">
+            <div class="card-body p-4">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                  <div class="w-8 h-8 bg-primary rounded flex items-center justify-center">
+                    <i class="fas fa-file-archive text-primary-content text-sm"></i>
+                  </div>
+                  <div>
+                    <h4 class="font-semibold">All Platforms</h4>
+                    <p class="text-xs text-gray-500">Download all 3 CSV files</p>
+                  </div>
+                </div>
+                <button id="modal-download-all" class="btn btn-sm btn-primary">
+                  <i class="fas fa-file-archive"></i> All CSV
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Preview Toggle -->
+        <div class="mt-6">
+          <button id="toggle-preview" class="btn btn-ghost btn-sm w-full">
+            <i class="fas fa-eye"></i> Show/Hide Preview
+          </button>
+          <div id="modal-preview" class="hidden mt-4 bg-base-200 rounded-lg p-4 max-h-64 overflow-y-auto">
+            <div class="text-xs font-mono" id="preview-content"></div>
+          </div>
+        </div>
+
+        <div class="modal-action">
+          <form method="dialog">
+            <button class="btn btn-ghost">Close</button>
+          </form>
+        </div>
+      </div>
+      <form method="dialog" class="modal-backdrop">
+        <button>close</button>
+      </form>
+    </dialog>
   </div>
 
   <div id="notification" class="toast toast-top toast-end hidden">
-    <div class="alert alert-success">Sukses!</div>
+    <div class="alert alert-primary">Success!</div>
   </div>
 
   <script src="script.js"></script>

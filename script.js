@@ -1,4 +1,4 @@
-// API Configuration dengan multiple keys untuk load balancing
+// API Configuration untuk load balancing
 const API_CONFIGS = [
     {
         key: "AIzaSyBnpi-ZnhpoXT_wUAMGjuCghrLob6C2p50",
@@ -7,38 +7,42 @@ const API_CONFIGS = [
         usage: 0,
         lastUsed: 0,
         status: 'unknown'
-    },{
-    	key: "AIzaSyAJVzovLU0ovc9ydqkRCGbsxBc4CJZZPQg",
-    	endpoint: "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent",
-    	name: "API Key 2",
-    	usage: 0,
-    	lastUsed: 0,
-    	status: 'unknown'
-    },{
-	key: "AIzaSyCoAEasOlOC9fwKgGrh2zfU2kgRDtjO4XA",
-	endpoint: "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent",
-	name: "API Key 3",
-	usage: 0,
-	lastUsed: 0,
-	status: 'unknown'
-	},{
-	key: "AIzaSyDUG7Eq3zvQ5roZVcoW3MsEDod71YDGp4M",
-	endpoint: "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent",
-	name: "API Key 4",
-	usage: 0,
-	lastUsed: 0,
-	status: 'unknown'
-	},{
-    	key: "AIzaSyDmsapmQeHkBHnaKfrwgiu_esa2Nvdc-CQ",
-    	endpoint: "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent",
-    	name: "API Key 5",
-    	usage: 0,
-    	lastUsed: 0,
-    	status: 'unknown'
+    },
+    {
+        key: "AIzaSyAJVzovLU0ovc9ydqkRCGbsxBc4CJZZPQg",
+        endpoint: "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent",
+        name: "API Key 2",
+        usage: 0,
+        lastUsed: 0,
+        status: 'unknown'
+    },
+    {
+        key: "AIzaSyCoAEasOlOC9fwKgGrh2zfU2kgRDtjO4XA",
+        endpoint: "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent",
+        name: "API Key 3",
+        usage: 0,
+        lastUsed: 0,
+        status: 'unknown'
+    },
+    {
+        key: "AIzaSyDUG7Eq3zvQ5roZVcoW3MsEDod71YDGp4M",
+        endpoint: "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent",
+        name: "API Key 4",
+        usage: 0,
+        lastUsed: 0,
+        status: 'unknown'
+    },
+    {
+        key: "AIzaSyDmsapmQeHkBHnaKfrwgiu_esa2Nvdc-CQ",
+        endpoint: "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent",
+        name: "API Key 5",
+        usage: 0,
+        lastUsed: 0,
+        status: 'unknown'
     }
 ];
 
-// Elemen DOM
+// DOM Elements
 const imageUpload = document.getElementById('image-upload');
 const imagePreviews = document.getElementById('image-previews');
 const prevBtn = document.getElementById('prev-btn');
@@ -48,18 +52,28 @@ const imageCount = document.querySelector('.image-count');
 const currentRange = document.getElementById('current-range');
 const totalImages = document.getElementById('total-images');
 const generateBtn = document.getElementById('generate-btn');
+const downloadModalBtn = document.getElementById('download-modal-btn');
 const loading = document.getElementById('loading');
 const progressInfo = document.getElementById('progress-info');
-const tabs = document.querySelectorAll('.tab');
-const tabContents = document.querySelectorAll('.tab-content');
-const metadataAll = document.getElementById('metadata-all');
-const metadataShutterstock = document.getElementById('metadata-shutterstock');
-const metadataAdobestock = document.getElementById('metadata-adobestock');
-const metadataVecteezy = document.getElementById('metadata-vecteezy');
-const downloadShutterstockBtn = document.getElementById('download-shutterstock');
-const downloadAdobestockBtn = document.getElementById('download-adobestock');
-const downloadVecteezyBtn = document.getElementById('download-vecteezy');
-const downloadAllBtn = document.getElementById('download-all');
+const metadataTableBody = document.getElementById('metadata-table-body');
+const mobileMetadataCards = document.getElementById('mobile-metadata-cards');
+const mobileTabs = document.getElementById('mobile-tabs');
+const mobileOverview = document.getElementById('mobile-overview');
+const mobileDetails = document.getElementById('mobile-details');
+const mobileKeywords = document.getElementById('mobile-keywords');
+
+// Modal elements
+const modalTotalFiles = document.getElementById('modal-total-files');
+const modalAvgKeywords = document.getElementById('modal-avg-keywords');
+const modalQualityScore = document.getElementById('modal-quality-score');
+const modalDownloadShutterstock = document.getElementById('modal-download-shutterstock');
+const modalDownloadAdobestock = document.getElementById('modal-download-adobestock');
+const modalDownloadVecteezy = document.getElementById('modal-download-vecteezy');
+const modalDownloadAll = document.getElementById('modal-download-all');
+const togglePreview = document.getElementById('toggle-preview');
+const modalPreview = document.getElementById('modal-preview');
+const previewContent = document.getElementById('preview-content');
+
 const notification = document.getElementById('notification');
 const fileCounter = document.querySelector('.file-counter');
 const uploadedCount = document.getElementById('uploaded-count');
@@ -70,34 +84,31 @@ const apiStatusList = document.getElementById('api-status-list');
 const vectorCheckbox = document.getElementById('vector-checkbox');
 const videoCheckbox = document.getElementById('video-checkbox');
 
-// Variabel state
+// State variables
 let uploadedImages = [];
 let currentMetadata = [];
 let currentIndex = 0;
 const MAX_FILES = 20;
-const IMAGESPERPAGE = 12;
+const IMAGES_PER_PAGE = 12;
 
-// Load balancer untuk API
+// Load balancer class untuk API management
 class APILoadBalancer {
     constructor(configs) {
         this.apis = [...configs];
         this.currentIndex = 0;
     }
 
-    // Mendapatkan API dengan penggunaan terendah dan status baik
     getNextAPI() {
         const availableAPIs = this.apis.filter(api => api.status === 'ready');
         
         if (availableAPIs.length === 0) {
-            // Jika tidak ada API yang ready, gunakan yang unknown
             const unknownAPIs = this.apis.filter(api => api.status === 'unknown');
             if (unknownAPIs.length > 0) {
                 return unknownAPIs[0];
             }
-            return this.apis[0]; // Fallback
+            return this.apis[0];
         }
 
-        // Urutkan berdasarkan penggunaan terendah dan waktu terakhir digunakan
         availableAPIs.sort((a, b) => {
             if (a.usage !== b.usage) {
                 return a.usage - b.usage;
@@ -108,7 +119,6 @@ class APILoadBalancer {
         return availableAPIs[0];
     }
 
-    // Update penggunaan API
     updateUsage(apiKey) {
         const api = this.apis.find(a => a.key === apiKey);
         if (api) {
@@ -117,7 +127,6 @@ class APILoadBalancer {
         }
     }
 
-    // Update status API
     updateStatus(apiKey, status) {
         const api = this.apis.find(a => a.key === apiKey);
         if (api) {
@@ -125,7 +134,6 @@ class APILoadBalancer {
         }
     }
 
-    // Reset usage counter (bisa dipanggil setiap jam)
     resetUsage() {
         this.apis.forEach(api => {
             api.usage = 0;
@@ -135,37 +143,34 @@ class APILoadBalancer {
 
 const loadBalancer = new APILoadBalancer(API_CONFIGS);
 
-// Tampilkan notifikasi
+// Utility functions
 function showNotification(message, isError = false) {
-	notification.innerHTML = `
-        <div class="alert ${isError ? 'alert-error' : 'alert-info'}">
-            <span>${message}</span>
-        </div>
-    `;
-	notification.classList.remove('hidden');
-	
-	setTimeout(() => {
-		notification.classList.add('hidden');
-	}, 3000);
+    notification.innerHTML = `<div class="alert ${isError ? 'alert-error' : 'alert-info'}">
+        <span>${message}</span>
+    </div>`;
+    notification.classList.remove('hidden');
+    
+    setTimeout(() => {
+        notification.classList.add('hidden');
+    }, 3000);
 }
 
-// Update status API display
 function updateAPIStatusDisplay() {
     apiStatusList.innerHTML = '';
     
     API_CONFIGS.forEach(api => {
         const statusItem = document.createElement('div');
-        statusItem.className = 'api-status-item';
+        statusItem.className = 'api-status-item flex justify-between items-center mb-2';
         
-        const statusClass = api.status === 'ready' ? 'ai-ready' : 
+        const statusClass = api.status === 'ready' ? 'ai-ready' :
                           api.status === 'bandwidth' ? 'ai-bandwidth' : 'ai-inactive';
         
         statusItem.innerHTML = `
-            <div class="api-status-info text-primary">
-                <span class="status-indicator ${statusClass}" style="position: static; margin: 0;"></span>
-                <span class="api-status-text text-primary text-sm">${api.name}: ${getStatusText(api.status)}</span>
+            <div class="flex items-center gap-2">
+                <span class="status-indicator ${statusClass}" style="position: static; width: 12px; height: 12px;"></span>
+                <span class="text-sm">${api.name}: ${getStatusText(api.status)}</span>
             </div>
-            <span class="api-usage-count text-primary-content text-xs">Used: ${api.usage}</span>
+            <span class="text-xs">Used: ${api.usage}</span>
         `;
         
         apiStatusList.appendChild(statusItem);
@@ -181,7 +186,18 @@ function getStatusText(status) {
     }
 }
 
-// Get filename with extension based on content type
+// Fungsi untuk menghitung jumlah keyword
+function countKeywords(keywordString) {
+    if (!keywordString || keywordString.trim() === '') return 0;
+    
+    // Split by comma dan hitung yang tidak kosong
+    const keywords = keywordString.split(',')
+        .map(keyword => keyword.trim())
+        .filter(keyword => keyword.length > 0);
+    
+    return keywords.length;
+}
+
 function getFilenameWithExtension(originalName, isVector, isVideo) {
     const nameWithoutExt = originalName.replace(/\.[^/.]+$/, "");
     
@@ -191,10 +207,9 @@ function getFilenameWithExtension(originalName, isVector, isVideo) {
         return nameWithoutExt + ".mp4";
     }
     
-    return originalName; // Keep original extension
+    return originalName;
 }
 
-// Update counter file
 function updateFileCounter() {
     uploadedCount.textContent = uploadedImages.length;
     maxFiles.textContent = MAX_FILES;
@@ -206,9 +221,8 @@ function updateFileCounter() {
     }
 }
 
-// Update tampilan navigasi gambar
 function updatePreviewNavigation() {
-    if (uploadedImages.length <= IMAGESPERPAGE) {
+    if (uploadedImages.length <= IMAGES_PER_PAGE) {
         previewNav.classList.add('hidden');
         imageCount.classList.add('hidden');
         return;
@@ -218,15 +232,14 @@ function updatePreviewNavigation() {
     imageCount.classList.remove('hidden');
     
     const start = currentIndex + 1;
-    const end = Math.min(currentIndex + IMAGESPERPAGE, uploadedImages.length);
+    const end = Math.min(currentIndex + IMAGES_PER_PAGE, uploadedImages.length);
     currentRange.textContent = `${start}-${end}`;
     totalImages.textContent = uploadedImages.length;
     
     prevBtn.disabled = currentIndex === 0;
-    nextBtn.disabled = currentIndex + IMAGESPERPAGE >= uploadedImages.length;
+    nextBtn.disabled = currentIndex + IMAGES_PER_PAGE >= uploadedImages.length;
 }
 
-// Update status indicator
 function updateStatusIndicator(index, status) {
     const previewItems = document.querySelectorAll('.preview-item');
     if (previewItems[index]) {
@@ -237,19 +250,18 @@ function updateStatusIndicator(index, status) {
     }
 }
 
-// Tampilkan gambar yang diunggah
 function displayImages() {
     imagePreviews.innerHTML = '';
     
-    const end = Math.min(currentIndex + IMAGESPERPAGE, uploadedImages.length);
+    const end = Math.min(currentIndex + IMAGES_PER_PAGE, uploadedImages.length);
     
     for (let i = currentIndex; i < end; i++) {
         const image = uploadedImages[i];
         const previewItem = document.createElement('div');
         previewItem.className = 'preview-item';
         previewItem.innerHTML = `
-            <img class="w-24 rounded-sm shadow-sm" src="${image.preview}" alt="Preview">
-            <div class="file-name w-24 h-xs overflow-hidden text-xs">${image.originalName}</div>
+            <img class="w-24 h-24 object-cover rounded-sm shadow-sm" src="${image.preview}" alt="Preview">
+            <div class="file-name w-24 text-xs mt-1 truncate">${image.originalName}</div>
             <div class="status-indicator status-ready"></div>
         `;
         imagePreviews.appendChild(previewItem);
@@ -259,7 +271,187 @@ function displayImages() {
     updateFileCounter();
 }
 
-// Preview gambar yang diunggah
+function updateMetadataTable() {
+    if (currentMetadata.length === 0) {
+        // Desktop table
+        metadataTableBody.innerHTML = `
+            <tr>
+                <td colspan="6" class="text-center text-gray-500 py-8">
+                    Upload gambar dan generate metadata untuk melihat preview
+                </td>
+            </tr>
+        `;
+        
+        // Mobile cards
+        mobileMetadataCards.innerHTML = `
+            <div class="text-center text-gray-500 py-8">
+                Upload gambar dan generate metadata untuk melihat preview
+            </div>
+        `;
+        
+        mobileTabs.style.display = 'none';
+        downloadModalBtn.disabled = true;
+        return;
+    }
+    
+    // Enable download button
+    downloadModalBtn.disabled = false;
+    
+    // Update desktop table
+    metadataTableBody.innerHTML = '';
+    
+    currentMetadata.forEach((meta, index) => {
+        const keywordCount = countKeywords(meta.keywords);
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <th class="text-xs">${index + 1}</th>
+            <td class="font-mono text-xs truncate max-w-32" title="${meta.filename}">${meta.filename}</td>
+            <td class="text-xs truncate max-w-48" title="${meta.title}">${meta.title}</td>
+            <td class="text-xs truncate max-w-64" title="${meta.description}">${meta.description}</td>
+            <td class="text-center text-xs font-semibold ${keywordCount < 25 ? 'text-red-500' : keywordCount > 35 ? 'text-orange-500' : 'text-green-500'}">${keywordCount}</td>
+            <td class="text-xs">
+                <div class="max-h-16 overflow-y-auto text-xs" title="${meta.keywords}">${meta.keywords}</div>
+            </td>
+        `;
+        metadataTableBody.appendChild(row);
+    });
+    
+    // Update mobile cards
+    updateMobileCards();
+    mobileTabs.style.display = 'block';
+}
+
+function updateModalStats() {
+    if (currentMetadata.length === 0) return;
+    
+    const totalFiles = currentMetadata.length;
+    const avgKeywords = Math.round(
+        currentMetadata.reduce((acc, meta) => acc + countKeywords(meta.keywords), 0) / totalFiles
+    );
+    
+    // Calculate quality score based on optimal keyword range (25-35)
+    const optimalCount = currentMetadata.filter(meta => {
+        const count = countKeywords(meta.keywords);
+        return count >= 25 && count <= 35;
+    }).length;
+    const qualityScore = Math.round((optimalCount / totalFiles) * 100);
+    
+    modalTotalFiles.textContent = totalFiles;
+    modalAvgKeywords.textContent = avgKeywords;
+    modalQualityScore.textContent = `${qualityScore}%`;
+    
+    // Update modal quality score color
+    const scoreElement = document.getElementById('modal-quality-score');
+    if (qualityScore >= 80) {
+        scoreElement.className = 'stat-value text-lg text-success';
+    } else if (qualityScore >= 60) {
+        scoreElement.className = 'stat-value text-lg text-warning';
+    } else {
+        scoreElement.className = 'stat-value text-lg text-error';
+    }
+}
+
+function updateMobileCards() {
+    mobileMetadataCards.innerHTML = '';
+    
+    currentMetadata.forEach((meta, index) => {
+        const keywordCount = countKeywords(meta.keywords);
+        const card = document.createElement('div');
+        card.className = 'metadata-card';
+        card.innerHTML = `
+            <div class="flex justify-between items-start mb-2">
+                <span class="font-semibold text-sm">#${index + 1}</span>
+                <span class="badge badge-sm ${keywordCount < 25 ? 'badge-error' : keywordCount > 35 ? 'badge-warning' : 'badge-success'}">${keywordCount} keywords</span>
+            </div>
+            <div class="font-mono text-xs mb-2 text-primary">${meta.filename}</div>
+            <div class="text-sm font-medium mb-2">${meta.title}</div>
+            <div class="text-xs text-gray-600 mb-3 truncate-3-lines">${meta.description}</div>
+            <div class="keywords-scroll">
+                <div class="flex flex-wrap gap-1">
+                    ${meta.keywords.split(',').slice(0, 10).map(keyword => 
+                        `<span class="badge badge-xs badge-ghost">${keyword.trim()}</span>`
+                    ).join('')}
+                    ${meta.keywords.split(',').length > 10 ? `<span class="text-xs text-gray-500">+${meta.keywords.split(',').length - 10} more</span>` : ''}
+                </div>
+            </div>
+        `;
+        mobileMetadataCards.appendChild(card);
+    });
+    
+    updateMobileTabs();
+}
+
+function updateMobileTabs() {
+    if (currentMetadata.length === 0) return;
+    
+    // Overview tab
+    mobileOverview.innerHTML = `
+        <div class="grid grid-cols-2 gap-4">
+            <div class="stat bg-base-200 rounded-lg p-3">
+                <div class="stat-title text-xs">Total Images</div>
+                <div class="stat-value text-lg">${currentMetadata.length}</div>
+            </div>
+            <div class="stat bg-base-200 rounded-lg p-3">
+                <div class="stat-title text-xs">Avg Keywords</div>
+                <div class="stat-value text-lg">${Math.round(currentMetadata.reduce((acc, meta) => acc + countKeywords(meta.keywords), 0) / currentMetadata.length)}</div>
+            </div>
+        </div>
+        <div class="mt-4">
+            <div class="text-sm font-semibold mb-2">Quality Status:</div>
+            <div class="space-y-2">
+                <div class="flex justify-between">
+                    <span class="text-xs">Optimal (25-35 keywords)</span>
+                    <span class="text-green-500 font-semibold">${currentMetadata.filter(meta => {
+                        const count = countKeywords(meta.keywords);
+                        return count >= 25 && count <= 35;
+                    }).length}</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-xs">Too few (&lt;25 keywords)</span>
+                    <span class="text-red-500 font-semibold">${currentMetadata.filter(meta => countKeywords(meta.keywords) < 25).length}</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-xs">Too many (&gt;35 keywords)</span>
+                    <span class="text-orange-500 font-semibold">${currentMetadata.filter(meta => countKeywords(meta.keywords) > 35).length}</span>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Details tab
+    mobileDetails.innerHTML = `
+        <div class="space-y-3">
+            ${currentMetadata.map((meta, index) => `
+                <div class="bg-base-200 rounded-lg p-3">
+                    <div class="font-semibold text-sm mb-1">#${index + 1} - ${meta.filename}</div>
+                    <div class="text-xs mb-2"><strong>Title:</strong> ${meta.title}</div>
+                    <div class="text-xs"><strong>Description:</strong> ${meta.description}</div>
+                </div>
+            `).join('')}
+        </div>
+    `;
+    
+    // Keywords tab
+    mobileKeywords.innerHTML = `
+        <div class="space-y-3">
+            ${currentMetadata.map((meta, index) => `
+                <div class="bg-base-200 rounded-lg p-3">
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="font-semibold text-sm">#${index + 1}</span>
+                        <span class="badge badge-sm ${countKeywords(meta.keywords) < 25 ? 'badge-error' : countKeywords(meta.keywords) > 35 ? 'badge-warning' : 'badge-success'}">${countKeywords(meta.keywords)}</span>
+                    </div>
+                    <div class="flex flex-wrap gap-1">
+                        ${meta.keywords.split(',').map(keyword => 
+                            `<span class="badge badge-xs badge-ghost">${keyword.trim()}</span>`
+                        ).join('')}
+                    </div>
+                </div>
+            `).join('')}
+        </div>
+    `;
+}
+
+// Image upload handler
 imageUpload.addEventListener('change', function(event) {
     const files = event.target.files;
     if (!files.length) return;
@@ -268,12 +460,9 @@ imageUpload.addEventListener('change', function(event) {
     
     uploadedImages = [];
     currentIndex = 0;
-    
-    metadataAll.value = '';
-    metadataShutterstock.value = '';
-    metadataAdobestock.value = '';
-    metadataVecteezy.value = '';
     currentMetadata = [];
+    
+    updateMetadataTable();
     
     limitedFiles.forEach((file, index) => {
         const reader = new FileReader();
@@ -304,52 +493,29 @@ imageUpload.addEventListener('change', function(event) {
     }
 });
 
-// Navigasi gambar
+// Navigation handlers
 prevBtn.addEventListener('click', function() {
     if (currentIndex > 0) {
-        currentIndex -= IMAGESPERPAGE;
+        currentIndex -= IMAGES_PER_PAGE;
         displayImages();
     }
 });
 
 nextBtn.addEventListener('click', function() {
-    if (currentIndex + IMAGESPERPAGE < uploadedImages.length) {
-        currentIndex += IMAGESPERPAGE;
+    if (currentIndex + IMAGES_PER_PAGE < uploadedImages.length) {
+        currentIndex += IMAGES_PER_PAGE;
         displayImages();
     }
 });
 
-// Tab navigation
-tabs.forEach(tab => {
-	tab.addEventListener('click', function() {
-		const tabId = this.getAttribute('data-tab');
-		
-		// Reset semua tab
-		tabs.forEach(t => t.classList.remove('tab-active'));
-		this.classList.add('tab-active');
-		
-		// Sembunyikan semua textarea
-		metadataAll.classList.add('hidden');
-		metadataShutterstock.classList.add('hidden');
-		metadataAdobestock.classList.add('hidden');
-		metadataVecteezy.classList.add('hidden');
-		
-		// Tampilkan textarea sesuai tab
-		if (tabId === 'all') metadataAll.classList.remove('hidden');
-		if (tabId === 'shutterstock') metadataShutterstock.classList.remove('hidden');
-		if (tabId === 'adobestock') metadataAdobestock.classList.remove('hidden');
-		if (tabId === 'vecteezy') metadataVecteezy.classList.remove('hidden');
-	});
-});
-
-// Fungsi untuk mengirim gambar ke API AI dengan load balancing
+// AI processing function
 async function processImageWithLoadBalancing(image, retryCount = 0) {
     const maxRetries = API_CONFIGS.length;
     
     if (retryCount >= maxRetries) {
         throw new Error('All APIs failed or unavailable');
     }
-
+    
     const api = loadBalancer.getNextAPI();
     const isVector = vectorCheckbox.checked;
     const isVideo = videoCheckbox.checked;
@@ -382,7 +548,7 @@ Example Format:
 [nama_file],"Professional business team collaborating in modern office","Diverse group of professionals working together at conference table in bright contemporary office space with natural lighting, suitable for business concepts, teamwork, and corporate communications","business, team, meeting, office, collaboration, professionals, diversity, conference, discussion, workplace, strategy, planning, success, partnership, leadership, corporate, communication, modern, interior, daylight"
 
 Do NOT include any additional text, explanations, or disclaimers. Output only the single line of metadata exactly as specified.`;
-
+    
     try {
         const requestBody = {
             contents: [{
@@ -403,7 +569,7 @@ Do NOT include any additional text, explanations, or disclaimers. Output only th
                 maxOutputTokens: 1024,
             }
         };
-
+        
         const response = await fetch(`${api.endpoint}?key=${api.key}`, {
             method: 'POST',
             headers: {
@@ -411,7 +577,7 @@ Do NOT include any additional text, explanations, or disclaimers. Output only th
             },
             body: JSON.stringify(requestBody)
         });
-
+        
         if (!response.ok) {
             if (response.status === 429) {
                 loadBalancer.updateStatus(api.key, 'bandwidth');
@@ -424,14 +590,13 @@ Do NOT include any additional text, explanations, or disclaimers. Output only th
             }
             throw new Error(`API Error: ${response.status}`);
         }
-
+        
         const data = await response.json();
         
         if (!data.candidates || !data.candidates[0] || !data.candidates[0].content || !data.candidates[0].content.parts || !data.candidates[0].content.parts[0]) {
             throw new Error("Unexpected API response format");
         }
-
-        // API berhasil, update status dan usage
+        
         loadBalancer.updateStatus(api.key, 'ready');
         loadBalancer.updateUsage(api.key);
         updateAPIStatusDisplay();
@@ -450,7 +615,6 @@ Do NOT include any additional text, explanations, or disclaimers. Output only th
     }
 }
 
-// Fungsi untuk mengurai metadata dari output AI
 function parseMetadata(metadataText, targetFilename) {
     const cleanText = metadataText.replace(/```csv|```/g, '').trim();
     const lines = cleanText.split('\n');
@@ -490,7 +654,6 @@ function parseMetadata(metadataText, targetFilename) {
     };
 }
 
-// Fungsi untuk mendownload file CSV
 function downloadCSV(content, filename) {
     const blob = new Blob([content], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
@@ -505,7 +668,6 @@ function downloadCSV(content, filename) {
     document.body.removeChild(link);
 }
 
-// Fungsi untuk membuat konten CSV Shutterstock
 function createShutterstockCSV(metadataArray) {
     let csvContent = 'filename,description,keywords\n';
     metadataArray.forEach(meta => {
@@ -514,7 +676,6 @@ function createShutterstockCSV(metadataArray) {
     return csvContent;
 }
 
-// Fungsi untuk membuat konten CSV Adobe Stock
 function createAdobestockCSV(metadataArray) {
     let csvContent = 'filename,title,keywords\n';
     metadataArray.forEach(meta => {
@@ -523,7 +684,6 @@ function createAdobestockCSV(metadataArray) {
     return csvContent;
 }
 
-// Fungsi untuk membuat konten CSV Vecteezy
 function createVecteezyCSV(metadataArray) {
     let csvContent = 'filename,title,keywords\n';
     metadataArray.forEach(meta => {
@@ -532,22 +692,6 @@ function createVecteezyCSV(metadataArray) {
     return csvContent;
 }
 
-// Update semua tab metadata
-function updateAllMetadataTabs() {
-    if (!currentMetadata.length) return;
-    
-    let allContent = 'filename,title,description,keywords\n';
-    currentMetadata.forEach(meta => {
-        allContent += `"${meta.filename}","${meta.title}","${meta.description}","${meta.keywords}"\n`;
-    });
-    metadataAll.value = allContent;
-    
-    metadataShutterstock.value = createShutterstockCSV(currentMetadata);
-    metadataAdobestock.value = createAdobestockCSV(currentMetadata);
-    metadataVecteezy.value = createVecteezyCSV(currentMetadata);
-}
-
-// Check status semua API
 async function checkAllAPIStatus() {
     const statusPromises = API_CONFIGS.map(async (api) => {
         try {
@@ -556,7 +700,7 @@ async function checkAllAPIStatus() {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ contents: [{ parts: [{ text: "ping" }] }] })
             });
-            
+
             if (res.ok) {
                 loadBalancer.updateStatus(api.key, 'ready');
             } else if (res.status === 429) {
@@ -571,61 +715,46 @@ async function checkAllAPIStatus() {
     });
 
     await Promise.all(statusPromises);
-    
-    // Update overall status
+
     const readyAPIs = API_CONFIGS.filter(api => api.status === 'ready');
     const bandwidthAPIs = API_CONFIGS.filter(api => api.status === 'bandwidth');
-    
+
     if (readyAPIs.length > 0) {
-        aiStatusDot.className = 'status-indicator ai-ready';
+        aiStatusDot.className = 'w-4 h-4 rounded-full border border-white shadow ai-ready';
         aiStatusText.textContent = `AI Status: ${readyAPIs.length} API(s) Ready`;
         generateBtn.disabled = false;
     } else if (bandwidthAPIs.length > 0) {
-        aiStatusDot.className = 'status-indicator ai-bandwidth';
+        aiStatusDot.className = 'w-4 h-4 rounded-full border border-white shadow ai-bandwidth';
         aiStatusText.textContent = 'AI Status: All APIs at bandwidth limit';
         generateBtn.disabled = true;
     } else {
-        aiStatusDot.className = 'status-indicator ai-inactive';
+        aiStatusDot.className = 'w-4 h-4 rounded-full border border-white shadow ai-inactive';
         aiStatusText.textContent = 'AI Status: All APIs inactive';
         generateBtn.disabled = true;
     }
-    
+
     updateAPIStatusDisplay();
 }
 
-// Initial API status check
-checkAllAPIStatus();
-
-// Auto-refresh API status every 5 minutes
-setInterval(checkAllAPIStatus, 5 * 60 * 1000);
-
-// Auto-reset usage counter every hour
-setInterval(() => {
-    loadBalancer.resetUsage();
-    updateAPIStatusDisplay();
-}, 60 * 60 * 1000);
-
-// Event listener untuk tombol generate
+// Generate metadata event handler
 generateBtn.addEventListener('click', async function() {
     if (!uploadedImages.length) {
         showNotification('Silakan unggah gambar terlebih dahulu.', true);
         return;
     }
-
+    
     generateBtn.disabled = true;
     loading.classList.remove('hidden');
-    metadataAll.value = 'filename,title,description,keywords\n\nMemproses gambar...';
-
+    
     const isVector = vectorCheckbox.checked;
     const isVideo = videoCheckbox.checked;
-
+    
     try {
         currentMetadata = [];
         
         for (let i = 0; i < uploadedImages.length; i++) {
             const image = uploadedImages[i];
             progressInfo.textContent = `${i} dari ${uploadedImages.length} gambar selesai`;
-            metadataAll.value = `filename,title,description,keywords\n\nMemproses gambar ${i+1} dari ${uploadedImages.length}...`;
             
             updateStatusIndicator(i, 'processing');
             
@@ -657,58 +786,90 @@ generateBtn.addEventListener('click', async function() {
                 });
                 updateStatusIndicator(i, 'error');
             }
+            
+            // Update table after each processed image
+            updateMetadataTable();
+            updateModalStats();
         }
         
         progressInfo.textContent = `${uploadedImages.length} dari ${uploadedImages.length} gambar selesai`;
-        updateAllMetadataTabs();
         showNotification(`Berhasil membuat metadata untuk ${uploadedImages.length} gambar.`);
         
     } catch (error) {
         console.error('Error:', error);
         showNotification('Terjadi kesalahan saat memproses gambar.', true);
-        metadataAll.value = `filename,title,description,keywords\n\nError: ${error.message}`;
     } finally {
         loading.classList.add('hidden');
         generateBtn.disabled = false;
     }
 });
 
-// Event listener untuk tombol download
-[downloadShutterstockBtn, downloadAdobestockBtn, downloadVecteezyBtn, downloadAllBtn].forEach(btn => {
-    btn.addEventListener('click', function() {
-        if (!currentMetadata.length) {
-            showNotification('Silakan generate metadata terlebih dahulu.', true);
-            return;
-        }
-    });
-});
-
-downloadShutterstockBtn.addEventListener('click', function() {
+// Modal download event handlers
+modalDownloadShutterstock.addEventListener('click', function() {
+    if (!currentMetadata.length) {
+        showNotification('Silakan generate metadata terlebih dahulu.', true);
+        return;
+    }
     const csvContent = createShutterstockCSV(currentMetadata);
     downloadCSV(csvContent, 'shutterstock_metadata.csv');
     showNotification('File Shutterstock CSV berhasil didownload.');
 });
 
-downloadAdobestockBtn.addEventListener('click', function() {
+modalDownloadAdobestock.addEventListener('click', function() {
+    if (!currentMetadata.length) {
+        showNotification('Silakan generate metadata terlebih dahulu.', true);
+        return;
+    }
     const csvContent = createAdobestockCSV(currentMetadata);
     downloadCSV(csvContent, 'adobestock_metadata.csv');
     showNotification('File Adobe Stock CSV berhasil didownload.');
 });
 
-downloadVecteezyBtn.addEventListener('click', function() {
+modalDownloadVecteezy.addEventListener('click', function() {
+    if (!currentMetadata.length) {
+        showNotification('Silakan generate metadata terlebih dahulu.', true);
+        return;
+    }
     const csvContent = createVecteezyCSV(currentMetadata);
     downloadCSV(csvContent, 'vecteezy_metadata.csv');
     showNotification('File Vecteezy CSV berhasil didownload.');
 });
 
-downloadAllBtn.addEventListener('click', function() {
+modalDownloadAll.addEventListener('click', function() {
+    if (!currentMetadata.length) {
+        showNotification('Silakan generate metadata terlebih dahulu.', true);
+        return;
+    }
+    
+    // Download all formats dengan delay
     downloadCSV(createShutterstockCSV(currentMetadata), 'shutterstock_metadata.csv');
-    downloadCSV(createAdobestockCSV(currentMetadata), 'adobestock_metadata.csv');
-    downloadCSV(createVecteezyCSV(currentMetadata), 'vecteezy_metadata.csv');
+    setTimeout(() => {
+        downloadCSV(createAdobestockCSV(currentMetadata), 'adobestock_metadata.csv');
+    }, 100);
+    setTimeout(() => {
+        downloadCSV(createVecteezyCSV(currentMetadata), 'vecteezy_metadata.csv');
+    }, 200);
+    
     showNotification('Semua file CSV berhasil didownload.');
 });
 
-// Checkbox event listeners untuk mencegah konflik
+// Toggle preview functionality
+togglePreview.addEventListener('click', function() {
+    if (modalPreview.classList.contains('hidden')) {
+        modalPreview.classList.remove('hidden');
+        
+        // Show preview of first few entries
+        const previewData = currentMetadata.slice(0, 3).map((meta, index) => 
+            `${index + 1}. ${meta.filename}\n   Title: ${meta.title}\n   Keywords: ${meta.keywords.slice(0, 100)}...\n`
+        ).join('\n');
+        
+        previewContent.textContent = previewData;
+    } else {
+        modalPreview.classList.add('hidden');
+    }
+});
+
+// Checkbox event listeners
 vectorCheckbox.addEventListener('change', function() {
     if (this.checked) {
         videoCheckbox.checked = false;
@@ -719,4 +880,41 @@ videoCheckbox.addEventListener('change', function() {
     if (this.checked) {
         vectorCheckbox.checked = false;
     }
+});
+
+// Initialize application
+document.addEventListener('DOMContentLoaded', function() {
+    // Initial API status check
+    checkAllAPIStatus();
+    
+    // Auto-refresh API status every 5 minutes
+    setInterval(checkAllAPIStatus, 5 * 60 * 1000);
+    
+    // Auto-reset usage counter every hour
+    setInterval(() => {
+        loadBalancer.resetUsage();
+        updateAPIStatusDisplay();
+    }, 60 * 60 * 1000);
+    
+    // Initialize table and modal
+    updateMetadataTable();
+    updateModalStats();
+    
+    // Mobile tab navigation
+    const mobileTabs = document.querySelectorAll('[data-mobile-tab]');
+    mobileTabs.forEach(tab => {
+        tab.addEventListener('click', function() {
+            const tabName = this.getAttribute('data-mobile-tab');
+            
+            // Update tab appearance
+            mobileTabs.forEach(t => t.classList.remove('tab-active'));
+            this.classList.add('tab-active');
+            
+            // Show correct content
+            document.querySelectorAll('.tab-content-mobile').forEach(content => {
+                content.classList.add('hidden');
+            });
+            document.getElementById(`mobile-${tabName}`).classList.remove('hidden');
+        });
+    });
 });
