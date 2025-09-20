@@ -42,6 +42,7 @@ const API_CONFIGS = [
     }
 ];
 
+
 // DOM Elements
 const imageUpload = document.getElementById('image-upload');
 const imagePreviews = document.getElementById('image-previews');
@@ -509,6 +510,22 @@ nextBtn.addEventListener('click', function() {
 });
 
 // AI processing function
+
+function downloadCSV(content, filename) {
+    const blob = new Blob([content], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    
+    link.setAttribute('href', url);
+    link.setAttribute('download', filename);
+    link.style.visibility = 'hidden';
+    
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+
+// Updated AI processing function with better category handling
 async function processImageWithLoadBalancing(image, retryCount = 0) {
     const maxRetries = API_CONFIGS.length;
     
@@ -520,40 +537,95 @@ async function processImageWithLoadBalancing(image, retryCount = 0) {
     const isVector = vectorCheckbox.checked;
     const isVideo = videoCheckbox.checked;
     
-    const promptText = `Generate compelling microstock metadata that will attract buyers and increase sales potential. Use a CSV-like format with exactly four columns: filename,title,description,keywords. All text must be in commercial English.
+// ENHANCED SEO MICROSTOCK PROMPT
+const promptText = `Analyze this image and generate high-converting microstock metadata optimized for search and sales.
 
-filename: [nama_file] (use this exact filename without modification)
+Return ONLY a JSON object with these exact fields:
+{
+  "filename": "exact_filename_provided",
+  "title": "SEO-optimized 50-150 char title",
+  "description": "detailed commercial description 150-200 chars", 
+  "keywords": "30-35 strategic keywords for maximum discoverability",
+  "shutterstock_category": "most relevant category from list",
+  "adobestock_category": "category number 1-21",
+  "vecteezy_license": "Pro"
+}
 
-title: Create a concise, engaging title (50-70 characters) that highlights the main subject, action, and context. Include commercial appeal and potential use cases. Focus on clarity and searchability.
+SEO OPTIMIZATION RULES:
 
-description: Write a detailed description (150-200 characters) that tells a story about the image. Include:
-- Main subjects and their actions
-- Color palette and composition
-- Mood and atmosphere
-- Potential commercial applications (e.g., website design, advertising, editorial content)
-- Technical details if relevant (e.g., isolated object, copy space)
-- Do NOT mention that it's a vector illustration if vector option is selected
-- DO NOT include any special characters, symbols, emojis, quotation marks, hyphens, or parentheses - use only standard letters (A-Z, a-z), numbers (0-9), commas, periods, and spaces.
+TITLE STRATEGY:
+- Start with PRIMARY subject (what buyers search for first)
+- Include EMOTION/MOOD words (happy, professional, modern, elegant)
+- Add COMMERCIAL USE hints (business, corporate, design, marketing)
+- Use TRENDING keywords (sustainable, diverse, authentic, minimal)
+- Examples: "Professional business team meeting in modern office", "Happy diverse family enjoying outdoor picnic"
 
-keywords: Provide 25-35 highly relevant, buyer-focused keywords including:
-- Primary subjects and actions
-- Styles and concepts
-- Industries and use cases
-- Synonyms and alternative phrases
-- Long-tail keywords for better discoverability
-- EXCLUDE the word "vector" completely if vector option is selected
-- Format as comma-separated values without numbers or bullets
+DESCRIPTION STRATEGY:  
+- First sentence: describe MAIN VISUAL ELEMENTS
+- Second sentence: suggest COMMERCIAL APPLICATIONS
+- Include DEMOGRAPHIC details (age, ethnicity, gender when visible)
+- Add TECHNICAL specs (isolated, copy space, high contrast)
+- Mention STYLE/AESTHETIC (modern, vintage, minimalist, colorful)
 
-Example Format:
-[nama_file],"Professional business team collaborating in modern office","Diverse group of professionals working together at conference table in bright contemporary office space with natural lighting, suitable for business concepts, teamwork, and corporate communications","business, team, meeting, office, collaboration, professionals, diversity, conference, discussion, workplace, strategy, planning, success, partnership, leadership, corporate, communication, modern, interior, daylight"
+KEYWORD STRATEGY (5W1H Framework):
+- WHAT: 6-8 PRIMARY subject keywords (main objects, people, concepts)
+- WHO: 4-5 DEMOGRAPHIC keywords (target audience, age groups, professions)
+- WHERE: 3-4 LOCATION/SETTING keywords (office, home, outdoor, studio, urban)
+- WHEN: 2-3 TEMPORAL keywords (morning, seasonal, contemporary, timeless)
+- WHY: 6-8 PURPOSE/EMOTION keywords (success, relaxation, celebration, communication)
+- HOW: 4-6 STYLE/METHOD keywords (minimalist, candid, professional, aerial, close-up)
+- BONUS: 2-3 TRENDING/NICHE keywords (sustainability, diversity, technology)
 
-Do NOT include any additional text, explanations, or disclaimers. Output only the single line of metadata exactly as specified.`;
+TOTAL: 30-35 strategically distributed keywords
+
+5W1H APPLICATION:
+- Use BOTH singular and plural forms for important terms
+- Include SYNONYM variations (happy/joyful, business/corporate)
+- Add SEASONAL/CONTEXTUAL terms when relevant
+
+HIGH-PERFORMING KEYWORD CATEGORIES:
+- Emotions: happy, confident, relaxed, focused, energetic, peaceful
+- Demographics: young, adult, senior, diverse, multicultural, family
+- Business: professional, corporate, teamwork, success, growth, strategy
+- Lifestyle: healthy, modern, casual, luxury, sustainable, authentic
+- Technical: isolated, copy space, close-up, overhead, horizontal, vertical
+- Colors: bright, vibrant, neutral, pastel, monochrome, colorful
+- Concepts: innovation, communication, education, wellness, finance, technology
+
+SHUTTERSTOCK CATEGORIES:
+Abstract, Animals/Wildlife, Arts, Backgrounds/Textures, Beauty/Fashion, Buildings/Landmarks, Business/Finance, Celebrities, Education, Food and Drink, Healthcare/Medical, Holidays, Industrial, Interiors, Miscellaneous, Nature, Objects, Parks/Outdoor, People, Religion, Science, Signs/Symbols, Sports/Recreation, Technology, Transportation, Vintage
+
+ADOBE STOCK CATEGORIES:
+1=Animals, 2=Buildings and Architecture, 3=Business, 4=Drinks, 5=The Environment, 6=States of Mind, 7=Food, 8=Graphic Resources, 9=Hobbies and Leisure, 10=Industry, 11=Landscapes, 12=Lifestyle, 13=People, 14=Plants and Flowers, 15=Culture and Religion, 16=Science, 17=Social Issues, 18=Sports, 19=Technology, 20=Transport, 21=Travel
+
+AVOID:
+- Generic terms (image, photo, picture)  
+- Overly technical jargon
+- Repetitive keywords
+- Special characters or symbols
+- Trademarked terms or brand names
+- Location-specific details unless globally relevant
+
+PRIORITIZE:
+- Commercial applicability
+- Emotional connection
+- Search volume potential
+- Trending market demands
+- Cross-platform compatibility
+
+Focus on what BUYERS are actually searching for, not just describing what you see.`;
+
+// Usage dalam function processImageWithLoadBalancing:
+// Ganti bagian promptText dengan enhanced version di atas
+    
+    const targetFilenameForPrompt = getFilenameWithExtension(image.originalName, isVector, isVideo);
+    const promptWithContext = `${promptText}\n\nfilename: ${targetFilenameForPrompt}\nvector: ${isVector ? 'yes' : 'no'}\nvideo: ${isVideo ? 'yes' : 'no'}`;
     
     try {
         const requestBody = {
             contents: [{
                 parts: [
-                    { text: promptText },
+                    { text: promptWithContext },
                     {
                         inline_data: {
                             mime_type: image.type || "image/jpeg",
@@ -615,8 +687,75 @@ Do NOT include any additional text, explanations, or disclaimers. Output only th
     }
 }
 
+// Updated parseMetadata function with better category handling
 function parseMetadata(metadataText, targetFilename) {
-    const cleanText = metadataText.replace(/```csv|```/g, '').trim();
+    if (!metadataText || !metadataText.trim()) return null;
+    
+    let cleanText = metadataText.replace(/```json|```/g, '').trim();
+    
+    // Try to find JSON first
+    const firstBrace = cleanText.indexOf('{');
+    const lastBrace = cleanText.lastIndexOf('}');
+    
+    if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+        const jsonCandidate = cleanText.slice(firstBrace, lastBrace + 1);
+        try {
+            const parsed = JSON.parse(jsonCandidate);
+            
+            const filename = parsed.filename || targetFilename;
+            const title = parsed.title || 'Generated title';
+            const description = parsed.description || 'Generated description';
+            
+            let keywords = parsed.keywords || '';
+            if (Array.isArray(keywords)) {
+                keywords = keywords.join(', ');
+            } else if (typeof keywords === 'string') {
+                keywords = keywords.trim();
+            } else {
+                keywords = 'keywords, generated, content';
+            }
+            
+            // Handle categories with fallbacks
+            let shutterstock_category = parsed.shutterstock_category || '';
+            let adobestock_category = parsed.adobestock_category || '';
+            let vecteezy_license = parsed.vecteezy_license || 'Pro';
+            
+            // Validate Shutterstock category
+            const validShutterstockCategories = [
+                'Abstract', 'Animals/Wildlife', 'Arts', 'Backgrounds/Textures', 'Beauty/Fashion',
+                'Buildings/Landmarks', 'Business/Finance', 'Celebrities', 'Education', 'Food and Drink',
+                'Healthcare/Medical', 'Holidays', 'Industrial', 'Interiors', 'Miscellaneous', 'Nature',
+                'Objects', 'Parks/Outdoor', 'People', 'Religion', 'Science', 'Signs/Symbols',
+                'Sports/Recreation', 'Technology', 'Transportation', 'Vintage'
+            ];
+            
+            if (!validShutterstockCategories.includes(shutterstock_category)) {
+                shutterstock_category = 'Miscellaneous'; // Default fallback
+            }
+            
+            // Validate Adobe Stock category (should be number 1-21)
+            const adobeCategoryNum = parseInt(adobestock_category);
+            if (isNaN(adobeCategoryNum) || adobeCategoryNum < 1 || adobeCategoryNum > 21) {
+                adobestock_category = '8'; // Default to "Graphic Resources"
+            } else {
+                adobestock_category = adobeCategoryNum.toString();
+            }
+            
+            return {
+                filename: filename,
+                title: title,
+                description: description,
+                keywords: keywords,
+                shutterstock_category: shutterstock_category,
+                adobestock_category: adobestock_category,
+                vecteezy_license: vecteezy_license
+            };
+        } catch (err) {
+            console.warn('JSON parse failed, falling back to CSV parsing.', err);
+        }
+    }
+    
+    // Fallback to CSV parsing with default categories
     const lines = cleanText.split('\n');
     let dataLine = '';
     
@@ -646,48 +785,57 @@ function parseMetadata(metadataText, targetFilename) {
         fields.push('');
     }
     
+    const fallbackTitle = fields[1] || 'Generated title';
+    const fallbackDescription = fields[2] || 'Generated description';
+    const fallbackKeywords = fields[3] || 'keywords, generated, content';
+    
     return {
         filename: targetFilename,
-        title: fields[1] || 'No title generated',
-        description: fields[2] || 'No description generated',
-        keywords: fields[3] || 'keywords'
+        title: fallbackTitle,
+        description: fallbackDescription,
+        keywords: fallbackKeywords,
+        shutterstock_category: 'Miscellaneous', // Default fallback
+        adobestock_category: '8', // Default to "Graphic Resources"
+        vecteezy_license: 'Pro'
     };
 }
 
-function downloadCSV(content, filename) {
-    const blob = new Blob([content], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    const url = URL.createObjectURL(blob);
-    
-    link.setAttribute('href', url);
-    link.setAttribute('download', filename);
-    link.style.visibility = 'hidden';
-    
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-}
-
+// Fixed CSV generation functions
 function createShutterstockCSV(metadataArray) {
-    let csvContent = 'filename,description,keywords\n';
+    // Header: filename,description,keywords,categories
+    let csvContent = 'filename,description,keywords,categories\n';
     metadataArray.forEach(meta => {
-        csvContent += `"${meta.filename}","${meta.description}","${meta.keywords}"\n`;
+        const filename = meta.filename || '';
+        const description = (meta.description || '').replace(/"/g, '""');
+        const keywords = (meta.keywords || '').replace(/"/g, '""');
+        const categories = (meta.shutterstock_category || 'Miscellaneous').replace(/"/g, '""');
+        csvContent += `"${filename}","${description}","${keywords}","${categories}"\n`;
     });
     return csvContent;
 }
 
 function createAdobestockCSV(metadataArray) {
-    let csvContent = 'filename,title,keywords\n';
+    // Header: filename,title,keywords,category (category is numeric code)
+    let csvContent = 'filename,title,keywords,category\n';
     metadataArray.forEach(meta => {
-        csvContent += `"${meta.filename}","${meta.description}","${meta.keywords}"\n`;
+        const filename = meta.filename || '';
+        const title = (meta.title || meta.description || '').replace(/"/g, '""');
+        const keywords = (meta.keywords || '').replace(/"/g, '""');
+        const category = meta.adobestock_category || '8'; // Default to "Graphic Resources"
+        csvContent += `"${filename}","${title}","${keywords}","${category}"\n`;
     });
     return csvContent;
 }
 
 function createVecteezyCSV(metadataArray) {
-    let csvContent = 'filename,title,keywords\n';
+    // Header: filename,title,keywords,license
+    let csvContent = 'filename,title,keywords,license\n';
     metadataArray.forEach(meta => {
-        csvContent += `"${meta.filename}","${meta.description}","${meta.keywords}"\n`;
+        const filename = meta.filename || '';
+        const title = (meta.title || meta.description || '').replace(/"/g, '""');
+        const keywords = (meta.keywords || '').replace(/"/g, '""');
+        const license = (meta.vecteezy_license || 'Pro').replace(/"/g, '""');
+        csvContent += `"${filename}","${title}","${keywords}","${license}"\n`;
     });
     return csvContent;
 }
@@ -771,7 +919,10 @@ generateBtn.addEventListener('click', async function() {
                         filename: targetFilename,
                         title: 'No title generated',
                         description: 'No description generated',
-                        keywords: 'keywords'
+                        keywords: 'keywords',
+                        shutterstock_category: '',
+                        adobestock_category: '',
+                        vecteezy_license: 'Pro'
                     });
                     updateStatusIndicator(i, 'error');
                 }
@@ -782,7 +933,10 @@ generateBtn.addEventListener('click', async function() {
                     filename: targetFilename,
                     title: 'Error: Could not generate title',
                     description: 'Error: Could not generate description',
-                    keywords: 'error, processing, failed'
+                    keywords: 'error, processing, failed',
+                    shutterstock_category: '',
+                    adobestock_category: '',
+                    vecteezy_license: 'Pro'
                 });
                 updateStatusIndicator(i, 'error');
             }
@@ -917,4 +1071,15 @@ document.addEventListener('DOMContentLoaded', function() {
             document.getElementById(`mobile-${tabName}`).classList.remove('hidden');
         });
     });
+});
+
+// Tambahkan event listener pada gambar preview
+imagePreviews.addEventListener('click', function(event) {
+  if (event.target.tagName === 'IMG') {
+    const imageSrc = event.target.src;
+    const imageModal = document.getElementById('image-modal');
+    const imageModalContent = document.getElementById('image-modal-content');
+    imageModalContent.src = imageSrc;
+    imageModal.showModal();
+  }
 });

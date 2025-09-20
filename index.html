@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html data-theme="nord">
+<html data-theme="light">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
@@ -117,6 +117,22 @@
       </div>
     </div>
     
+    <!-- Modal untuk menampilkan gambar asli -->
+<dialog id="image-modal" class="modal">
+  <div class="modal-box">
+    <img id="image-modal-content" class="w-full" src="" alt="Gambar Asli">
+    <div class="modal-action">
+      <form method="dialog">
+        <button class="btn btn-ghost">Tutup</button>
+      </form>
+    </div>
+  </div>
+  <form method="dialog" class="modal-backdrop">
+    <button>close</button>
+  </form>
+</dialog>
+
+    
     <!-- Content Type Selection -->
     <div class="flex justify-between items-center my-4">
       <h3 class="font-semibold">Pilih Jenis Konten:</h3>
@@ -154,7 +170,7 @@
       <h2 class="text-left font-bold">Preview Metadata:</h2>
       
       <!-- Mobile Card View -->
-      <div class="block text-left -mt-6 lg:hidden" id="mobile-metadata-view">
+      <div class="block text-left lg:hidden" id="mobile-metadata-view">
         <div id="mobile-metadata-cards" class="space-y-4">
           <div class="text-center text-gray-500 py-8">
             Upload gambar dan generate metadata untuk melihat preview
